@@ -1,0 +1,110 @@
+---
+title: "R & Python in RStudio (test)"
+output: html_document
+---
+*by [Tatiana Kurilo](https://github.com/TianaQ)*
+```{r r_setup, include=FALSE}
+# R setup
+library(reticulate)
+```
+
+```{python python_setup, echo=FALSE}
+# Python setup
+import matplotlib.pyplot as plt
+```
+
+## Udacity Bertelsmann Data Science Challenge Course
+### Lesson 2: Practice Problems
+
+**Kathleen counts the number of petals on all the flowers in her garden.**
+```{python petal_list, echo=FALSE}
+petals = [15, 16, 15, 17, 14, 14, 14, 10, 15, 25, 
+            16, 21, 16, 16, 13, 15, 15, 19, 22, 15, 
+            17, 22, 15, 22, 14, 15, 16, 15, 24, 16]
+
+print("Kathleen's petal counts:")
+print(petals)
+```
+**Create a histogram and describe the distribution of flower petals on Kathleen’s flowers. Use a bin size of 2.**
+
+Let's build the first histogram in Python.  
+```{python petal_hist_binsize_2, echo=FALSE}
+# Plotting the first histogram in Python            
+def plot_hist(data, binsize):
+  plt.hist(data, bins=range(min(data), max(data) + (binsize - (max(data) - min(data)) % binsize) + binsize, binsize), edgecolor='black')
+  plt.title('Number of Petals (bin size = {})'.format(binsize))
+  plt.xlabel('Petals')
+  plt.ylabel('Count')
+  plt.show()
+
+# bin size of 2
+plot_hist(petals, 2)
+```
+  
+**What number of petals seems most prominent in Kathleen’s garden? What happens if we change the bin size to 5?**  
+As we can see from the chart, the most frequent number of petals falls into the interval between 14 and 16 (actually [14,16) ). There are 8 bins of size 2. Mode of the data set equals to `r names(sort(-table(py$petals)))[1]`.
+
+Let's build the second histogram in R. 
+```{r petal_hist_binsize_5, echo=FALSE}
+# Plotting the second histogram in R
+plot_hist <- function(data, binsize) {
+  seq_min <- min(data)
+  seq_max <- max(data)
+  break_seq <- seq(seq_min, seq_max + (binsize - (seq_max - seq_min) %% binsize), by=binsize)
+  hist(data, main = paste("Number of Petals (bin size = ", toString(binsize), ")", sep=""), col="blue", xlab="Petals", right=FALSE, breaks = break_seq)
+}
+
+# bin size of 5
+plot_hist(py$petals, 5)
+```
+
+If we change the bin size to 5, the number of bins decreases. I increased the range of data up to a full bin in the end of the range to see all the data on the histogram and added some parameters to ensure that R and Python produce visually the same result. By default Python and R treat the intervals of histograms differently that results in different outcome.  
+```{python clear_chart, echo=FALSE}
+# clearing the chart for another graph to avoid overlapping
+plt.close()
+```
+  
+
+#### Python  
+```{python python_default_hist}
+plt.hist(petals, bins=3)
+plt.show()
+```
+  
+With the bin size of 5 Python by default gives us a symmetrial histogram for the petal counts. If *bins* is set by a sequence, all but the last (righthand-most) bin is half-open.  
+
+> In other words, if bins is: [1, 2, 3, 4] then the first bin is [1, 2) (including 1, but excluding 2) and the second [2, 3). The last bin, however, is [3, 4], which includes 4". ([source](https://matplotlib.org/api/_as_gen/matplotlib.pyplot.hist.html))  
+  
+#### R    
+```{r r_default_hist}
+hist(py$petals, breaks = 3)
+```
+  
+The same parameters in R produced a skewed distribution of the same data, because by default  
+
+> the histogram cells are intervals of the form (a, b], i.e., they include their right-hand endpoint, but not their left one, with the exception of the first cell when include.lowest is TRUE. ([source](https://stat.ethz.ch/R-manual/R-devel/library/graphics/html/hist.html)) 
+
+To change this, the *right* attribute should be set to *FALSE* - then "the intervals are of the form [a, b), and include.lowest means ‘include highest’".
+
+See the documentation of [Python](https://matplotlib.org/api/_as_gen/matplotlib.pyplot.hist.html) and [R](https://stat.ethz.ch/R-manual/R-devel/library/graphics/html/hist.html) for more information.  
+  
+  
+  
+### Appendix  
+The code used in this document  
+```{r ref.label='r_setup', eval=FALSE}
+```
+```{python ref.label="python_setup, eval=FALSE"}
+```
+```{python ref.label="petal_list",eval=FALSE}
+```
+```{python ref.label="petal_hist_binsize_2", eval=FALSE}
+```
+```{r ref.label="petal_hist_binsize_5", eval=FALSE}
+```
+```{python ref.label="clear_chart", eval=FALSE}
+```
+```{python ref.label="python_default_hist", eval=FALSE}
+```
+```{r ref.label="r_default_hist", eval=FALSE}
+```
