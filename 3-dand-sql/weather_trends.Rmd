@@ -1,0 +1,223 @@
+---
+title: "Project 1. Explore Weather Trends"
+output: html_document
+---
+
+#### _by Tatiana Kurilo_
+#### _September, 2018_ 
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+<br> 
+
+##### Step 1
+The data for New York, Moscow and the world were extracted from the temperatures database (the database was recreated locally from the downloaded .csv files in order to include an executable query in R Markdown).
+
+```{r include=FALSE}
+### Step 1
+library(DBI)
+db <- dbConnect(RSQLite::SQLite(), dbname = 'avg_temp.db')
+```
+
+```{sql, connection=db}
+SELECT sub.year, world, new_york, c2.avg_temp AS moscow
+FROM (SELECT g.year, c1.avg_temp AS new_york, g.avg_temp AS world
+      FROM city_data AS c1
+      JOIN global_data AS g USING(year)
+      WHERE c1.city = 'New York') sub
+JOIN city_data as c2 USING(year)
+WHERE c2.city = 'Moscow'
+ORDER BY 1;
+```
+
+```{sql, connection=db, output.var = 'avg_temp', echo=FALSE}
+SELECT sub.year, world, new_york, c2.avg_temp AS moscow
+FROM (SELECT g.year, c1.avg_temp AS new_york, g.avg_temp AS world
+      FROM city_data AS c1
+      JOIN global_data AS g USING(year)
+      WHERE c1.city = 'New York') sub
+JOIN city_data AS c2 USING(year)
+WHERE c2.city = 'Moscow'
+ORDER BY 1;
+```
+<br>
+
+##### Step 2
+The data type was converted from character to numeric for calculations. The missing data for New York in 1780 were filled in using linear interpolation, as recommended for time series data with trends and without seasonality [[1](#first)].
+```{r warning=FALSE, echo=FALSE}
+### Step 2
+avg_temp$year = as.numeric(avg_temp$year)
+avg_temp$world = as.numeric(avg_temp$world)
+avg_temp$new_york = as.numeric(avg_temp$new_york)
+avg_temp$moscow = as.numeric(avg_temp$moscow)
+
+library(imputeTS)
+avg_temp <- na.interpolation(avg_temp)
+str(avg_temp)
+summary(avg_temp)
+```
+<br>
+
+##### Step 3
+The raw data were plotted as a line chart. 
+```{r echo = FALSE, fig.width=10}
+plot_temp <- function(year, world, new_york, moscow, title) {
+  plot(year,world, type='l', col='black', main=title, ylim = c(-5, 15), ylab = 'Average Temperature, ºC', xlim = c(1750, 2020), xlab = 'Years', xaxp  = c(1750, 2020, 27), las=2)
+lines(year, moscow, col='blue')
+lines(year, new_york, col='red')
+grid(nx = 29, ny=22, col = 'lightgray', lty = 'dotted')
+legend('bottomright', legend = c('World', 'New York', 'Moscow'), col = c('black', 'red', 'blue'), lty=1, bty = "n", pt.cex = 2, cex = 0.8, text.col = "black")
+}
+
+plot_temp(avg_temp$year, avg_temp$world, avg_temp$new_york, avg_temp$moscow, 'Temperature Trends')
+
+```
+
+##### From the chart the following observations can be obtained  
+1) It is difficult to define the trends from the raw data because of fluctuations, though the local temperature lines of New York and Moscow seem to follow the global line more closely during the period of 1750-1850, with more deviations later on. <br>
+2) In comparison with the global yearly average, the temperatures in Moscow are usually 3-5ºC lower, but seem to follow the pattern of the global line more closely. <br>
+3) The average yearly temperature in New York tends to be 1-2ºC higher, than global, except for the second half of the 18th century with two extreme downfalls. <br>
+4) The downfall in temperatures of 1752 can be observed both locally and globally.<br>
+<br>
+
+##### Step 4
+The simple moving averages were calculated for all three temprature variables to minimize the fluctuations [[2](#second)]. The new data were againg plotted as line charts. Two different windows - of 5 and of 10 years - were used to see the trends in shorter and longer time perspective.
+```{r echo=FALSE, fig.width=10}
+window = 5
+avgtype = "s"
+library(pracma)
+avg_temp$world_1 <- movavg(avg_temp$world, window, avgtype)
+avg_temp$new_york_1 <- movavg(avg_temp$new_york, window, avgtype)
+avg_temp$moscow_1 <- movavg(avg_temp$moscow, window, avgtype)
+
+plot_temp(avg_temp$year, avg_temp$world_1, avg_temp$new_york_1, avg_temp$moscow_1, 'Temperature Trends\n(SMA for 5 years)')
+```
+
+```{r echo=FALSE, fig.width=10}
+window = 10
+avgtype = "s"
+avg_temp$world_2 <- movavg(avg_temp$world, window, avgtype)
+avg_temp$new_york_2 <- movavg(avg_temp$new_york, window, avgtype)
+avg_temp$moscow_2 <- movavg(avg_temp$moscow, window, avgtype)
+
+plot_temp(avg_temp$year, avg_temp$world_2, avg_temp$new_york_2, avg_temp$moscow_2, 'Temperature Trends\n(SMA for 10 years)')
+```
+
+##### The following conclusions can be made using the charts above 
+1) The wider the length of the backward window, used in calculations, the smoother the lines we can see on the plot. And the lines follow each other closer. <br>
+2) Moreover, the overall increasing trend can be seen starting from about 1850.  <br>
+3) The average yearly temperature in New York is typically about 1ºC higher than global. <br>
+4) Again, Moscow seems to be following the global trend more closely than New York, with the temperatures about 4ºC lower. The same can also be seen from the higher correlation coefficients between temperatures (see below). <br>
+5) Still, with the moving averages taken for a longer period the local trends become more similar to the global pattern, so the correlation coefficient for the two cities also becomes more meaningful.<br>
+
+###### Correlation coefficients for the raw data:  
+World - New York: `r format(cor(avg_temp$world, avg_temp$new_york), digits = 2)`<br>
+World - Moscow: `r format(cor(avg_temp$world, avg_temp$moscow), digits = 2)`<br>
+New York - Moscow: `r format(cor(avg_temp$new_york, avg_temp$moscow), digits = 2)`<br>
+
+###### Correlation coefficients for 5-year SMA:  
+World - New York: `r format(cor(avg_temp$world_1, avg_temp$new_york_1), digits = 2)`<br>
+World - Moscow: `r format(cor(avg_temp$world_1, avg_temp$moscow_1), digits = 2)`<br>
+New York - Moscow: `r format(cor(avg_temp$new_york_1, avg_temp$moscow_1), digits = 2)`<br>
+
+###### Correlation coefficients for 10-year SMA:
+World - New York: `r format(cor(avg_temp$world_2, avg_temp$new_york_2), digits = 2)`<br>
+World - Moscow: `r format(cor(avg_temp$world_2, avg_temp$moscow_2), digits = 2)`<br>
+New York - Moscow: `r format(cor(avg_temp$new_york_2, avg_temp$moscow_2), digits = 2)`<br>
+<br>
+
+##### Step 5
+To estimate the local temperatures in New York or Moscow depending on the global temperature level, we can use the differences obtained earlier from the line charts and summary statistics and add ~1ºC for New York or subtract ~4ºC for Moscow. Another option is scatterplots with trendlines. It should be kept in mind that for New York the estimates based on global temperatures in the range of 7.7-8.6 ºC may be less accurate.<br>
+```{r echo=FALSE}
+city_scatter <- function(world, city, city_name) {
+  plot(world, city, main = paste("Average Yearly Temperature: World vs", city_name), xlab = "World", ylab = city_name)
+  grid(col = "lightgray", lty = "dotted")
+  abline(lm(city~world), col="red")
+}
+city_scatter(avg_temp$world_2, avg_temp$new_york_2, "New York")
+```
+```{r echo=FALSE}
+city_scatter(avg_temp$world_2, avg_temp$moscow_2, "Moscow")
+```
+
+#### Sources
+<a name="first">1</a>. [How to Handle Missing Data](https://towardsdatascience.com/how-to-handle-missing-data-8646b18db0d4)<br>
+<a name="second">2</a>. [Documentation for `movavg()` function in `pracma` package in R](https://www.rdocumentation.org/packages/pracma/versions/1.9.9/topics/movavg)<br>
+<br>
+
+#### Appendix
+##### Code used in the report
+```{r eval=FALSE}
+### Step 1
+library(DBI)
+db <- dbConnect(RSQLite::SQLite(), dbname = 'avg_temp.db')
+```
+```{sql, connection=db, output.var = 'avg_temp', eval=FALSE}
+SELECT sub.year, world, new_york, c2.avg_temp AS moscow
+FROM (SELECT g.year, c1.avg_temp AS new_york, g.avg_temp AS world
+      FROM city_data AS c1
+      JOIN global_data AS g USING(year)
+      WHERE c1.city = 'New York') sub
+JOIN city_data as c2 USING(year)
+WHERE c2.city = 'Moscow'
+ORDER BY 1;
+```
+
+```{r warning=FALSE, eval=FALSE}
+### Step 2
+avg_temp$year = as.numeric(avg_temp$year)
+avg_temp$world = as.numeric(avg_temp$world)
+avg_temp$new_york = as.numeric(avg_temp$new_york)
+avg_temp$moscow = as.numeric(avg_temp$moscow)
+
+library(imputeTS)
+avg_temp <- na.interpolation(avg_temp)
+str(avg_temp)
+summary(avg_temp)
+```
+
+```{r fig.width=10, eval=FALSE}
+###Step 3
+plot_temp <- function(year, world, new_york, moscow, title) {
+  plot(year,world, type='l', col='black', main=title, ylim = c(-5, 15), ylab = 'Average Temperature, ºC', xlim = c(1750, 2020), xlab = 'Years', xaxp  = c(1750, 2020, 27), las=2)
+lines(year, moscow, col='blue')
+lines(year, new_york, col='red')
+grid(nx = 28, ny=22, col = 'lightgray', lty = 'dotted')
+legend('bottomright', legend = c('World', 'New York', 'Moscow'), col = c('black', 'red', 'blue'), lty=1, bty = "n", pt.cex = 2, cex = 0.8, text.col = "black")
+}
+
+plot_temp(avg_temp$year, avg_temp$world, avg_temp$new_york, avg_temp$moscow, 'Temperature Trends')
+```
+
+```{r eval=FALSE, fig.width=10}
+### Step 4
+window = 5
+avgtype = "s" # for testing other moving average types
+library(pracma)
+avg_temp$world_1 <- movavg(avg_temp$world, window, avgtype)
+avg_temp$new_york_1 <- movavg(avg_temp$new_york, window, avgtype)
+avg_temp$moscow_1 <- movavg(avg_temp$moscow, window, avgtype)
+
+plot_temp(avg_temp$year, avg_temp$world_1, avg_temp$new_york_1, avg_temp$moscow_1, 'Temperature Trends\n(SMA for 5 years)')
+```
+
+```{r eval=FALSE, fig.width=10}
+window = 10
+avg_temp$world_2 <- movavg(avg_temp$world, window, avgtype)
+avg_temp$new_york_2 <- movavg(avg_temp$new_york, window, avgtype)
+avg_temp$moscow_2 <- movavg(avg_temp$moscow, window, avgtype)
+
+plot_temp(avg_temp$year, avg_temp$world_2, avg_temp$new_york_2, avg_temp$moscow_2, 'Temperature Trends\n(SMA for 10 years)')
+```
+
+```{r eval=FALSE}
+### Step 5
+city_scatter <- function(world, city, city_name) {
+  plot(world, city, main = paste("Average yearly temperature: World vs", city_name), xlab = "World", ylab = city_name)
+  grid(col = "lightgray", lty = "dotted")
+  abline(lm(city~world), col="red")
+}
+city_scatter(avg_temp$world_2, avg_temp$new_york_2, "New York")
+city_scatter(avg_temp$world_2, avg_temp$moscow_2, "Moscow")
+```

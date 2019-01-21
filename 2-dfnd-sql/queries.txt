@@ -1,0 +1,57 @@
+--Highest Album Price
+SELECT a.Title, g.Name AS Genre, SUM(t.UnitPrice) AS Price
+FROM Track AS t
+JOIN Album AS a ON a.AlbumId = t.AlbumId
+JOIN Genre AS g ON t.GenreId = g.GenreID
+GROUP BY a.AlbumId
+ORDER BY Price DESC
+LIMIT 1;
+
+--Average Album Price By Genre
+SELECT Genre, AVG(Price) as Avg_Album_Price
+FROM (SELECT a.Title, g.Name AS Genre, SUM(t.UnitPrice) AS Price
+      FROM Track AS t
+      JOIN Album AS a ON a.AlbumID = t.AlbumID
+      JOIN Genre AS g ON t.GenreId = g.GenreID
+      GROUP BY a.AlbumID
+      ORDER BY Price DESC ) album_prices
+GROUP BY 1
+ORDER BY 2 DESC;
+
+--Sold Tracks By Genre
+SELECT Genre, AVG(Sold) * 100
+FROM (SELECT t.Name, g.Name AS Genre, t.TrackId IN (SELECT il.TrackId FROM InvoiceLine as il) AS Sold
+      FROM Track AS t
+      JOIN Genre AS g ON t.GenreId = g.GenreId) sub
+GROUP BY 1
+ORDER BY 2 DESC;
+
+--Most Popular Genres By States In USA
+SELECT BillingState AS state, Genre, MAX(num_tracks) AS NumberOfPurchasedTracks
+FROM (SELECT i.BillingState, g.Name AS Genre, count(il.TrackID) AS num_tracks
+      FROM Invoice AS i
+      JOIN InvoiceLine AS il ON i.InvoiceId = il.InvoiceId AND i.BillingState <> "NA" AND i.BillingCountry = "USA"
+      JOIN Track AS t ON il.TrackId = t.TrackId
+      JOIN Genre AS g ON t.GenreId = g.GenreId
+      GROUP BY 2
+      ORDER BY 3 DESC) sub
+GROUP BY 1
+
+--Unique Customers By Composer
+SELECT t.Composer, COUNT(DISTINCT i.CustomerId)
+FROM Track AS t
+JOIN InvoiceLine AS il ON t.TrackId = il.TrackId AND t.Composer <> "NA"
+JOIN Invoice AS i ON il.InvoiceId = i.InvoiceId
+GROUP BY 1
+ORDER BY 2 DESC
+LIMIT 10;
+
+--Number Of Composers With More Than 1 Listener
+SELECT COUNT(num_listeners) AS more_than_one
+FROM (SELECT t.Composer, count(DISTINCT i.CustomerId) AS num_listeners
+      FROM Track AS t
+      JOIN InvoiceLine AS il ON t.TrackId = il.TrackId AND t.Composer <> "NA"
+      JOIN Invoice AS i ON il.InvoiceId = i.InvoiceId
+      GROUP BY 1
+      ORDER BY 2 DESC) sub
+WHERE num_listeners > 1
