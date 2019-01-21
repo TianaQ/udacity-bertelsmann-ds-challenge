@@ -1,0 +1,219 @@
+code,country,1990,1995,2000,2005,2010,2013
+AFG,Afghanistan,L,L,L,L,L,L
+ALB,Albania,LM,L,LM,LM,UM,UM
+DZA,Algeria,LM,LM,LM,LM,UM,UM
+ASM,American Samoa,UM,UM,UM,UM,UM,UM
+AND,Andorra,H,H,H,H,H,H
+AGO,Angola,LM,L,L,LM,LM,UM
+ATG,Antigua and Barbuda,UM,UM,UM,H,UM,H
+ARG,Argentina,LM,UM,UM,UM,UM,UM
+ARM,Armenia,..,L,L,LM,LM,LM
+ABW,Aruba,H,H,H,H,H,H
+AUS,Australia,H,H,H,H,H,H
+AUT,Austria,H,H,H,H,H,H
+AZE,Azerbaijan,..,L,L,LM,UM,UM
+BHS,"Bahamas, The",H,H,H,H,H,H
+BHR,Bahrain,UM,UM,UM,H,H,H
+BGD,Bangladesh,L,L,L,L,L,L
+BRB,Barbados,UM,UM,H,UM,H,H
+BLR,Belarus,..,LM,LM,LM,UM,UM
+BEL,Belgium,H,H,H,H,H,H
+BLZ,Belize,LM,LM,LM,UM,LM,UM
+BEN,Benin,L,L,L,L,L,L
+BMU,Bermuda,H,H,H,H,H,H
+BTN,Bhutan,L,L,L,L,LM,LM
+BOL,Bolivia,LM,LM,LM,LM,LM,LM
+BIH,Bosnia and Herzegovina,..,L,LM,LM,UM,UM
+BWA,Botswana,LM,LM,UM,UM,UM,UM
+BRA,Brazil,UM,UM,UM,LM,UM,UM
+VGB,British Virgin Islands,..,..,..,..,..,..
+BRN,Brunei Darussalam,H,H,H,H,H,H
+BGR,Bulgaria,LM,LM,LM,LM,UM,UM
+BFA,Burkina Faso,L,L,L,L,L,L
+BDI,Burundi,L,L,L,L,L,L
+CPV,Cabo Verde,LM,LM,LM,LM,LM,LM
+KHM,Cambodia,L,L,L,L,L,L
+CMR,Cameroon,LM,L,L,LM,LM,LM
+CAN,Canada,H,H,H,H,H,H
+CYM,Cayman Islands,..,H,H,H,H,H
+CAF,Central African Republic,L,L,L,L,L,L
+TCD,Chad,L,L,L,L,L,L
+CHI,Channel Islands,H,H,H,H,H,H
+CHL,Chile,LM,UM,UM,UM,UM,H
+CHN,China,L,L,LM,LM,UM,UM
+COL,Colombia,LM,LM,LM,LM,UM,UM
+COM,Comoros,L,L,L,L,L,L
+COD,"Congo, Dem. Rep.",L,L,L,L,L,L
+COG,"Congo, Rep.",LM,L,L,LM,LM,LM
+CRI,Costa Rica,LM,LM,UM,UM,UM,UM
+CIV,Côte d'Ivoire,LM,L,L,L,LM,LM
+HRV,Croatia,..,UM,UM,UM,H,H
+CUB,Cuba,LM,LM,LM,LM,UM,UM
+CUW,Curaçao,..,..,..,..,H,H
+CYP,Cyprus,H,H,H,H,H,H
+CZE,Czech Republic,..,UM,UM,UM,H,H
+DNK,Denmark,H,H,H,H,H,H
+DJI,Djibouti,LM,LM,LM,LM,LM,LM
+DMA,Dominica,LM,LM,UM,UM,UM,UM
+DOM,Dominican Republic,LM,LM,LM,LM,UM,UM
+ECU,Ecuador,LM,LM,LM,LM,UM,UM
+EGY,"Egypt, Arab Rep.",L,LM,LM,LM,LM,LM
+SLV,El Salvador,LM,LM,LM,LM,LM,LM
+GNQ,Equatorial Guinea,L,L,LM,UM,H,H
+ERI,Eritrea,..,L,L,L,L,L
+EST,Estonia,..,LM,UM,UM,H,H
+ETH,Ethiopia,L,L,L,L,L,L
+FRO,Faeroe Islands,H,H,H,H,H,H
+FJI,Fiji,LM,LM,LM,LM,LM,UM
+FIN,Finland,H,H,H,H,H,H
+FRA,France,H,H,H,H,H,H
+PYF,French Polynesia,H,H,H,H,H,H
+GAB,Gabon,UM,UM,UM,UM,UM,UM
+GMB,"Gambia, The",L,L,L,L,L,L
+GEO,Georgia,..,L,L,LM,LM,LM
+DEU,Germany,H,H,H,H,H,H
+GHA,Ghana,L,L,L,L,LM,LM
+GIB,Gibraltar,UM,..,..,..,H,..
+GRC,Greece,UM,UM,H,H,H,H
+GRL,Greenland,H,H,H,H,H,H
+GRD,Grenada,LM,LM,UM,UM,UM,UM
+GUM,Guam,UM,H,H,H,H,H
+GTM,Guatemala,LM,LM,LM,LM,LM,LM
+GIN,Guinea,L,L,L,L,L,L
+GNB,Guinea-Bissau,L,L,L,L,L,L
+GUY,Guyana,L,L,LM,LM,LM,LM
+HTI,Haiti,L,L,L,L,L,L
+HND,Honduras,L,L,LM,LM,LM,LM
+HKG,"Hong Kong SAR, China",H,H,H,H,H,H
+HUN,Hungary,UM,UM,UM,UM,H,UM
+ISL,Iceland,H,H,H,H,H,H
+IND,India,L,L,L,L,LM,LM
+IDN,Indonesia,L,LM,L,LM,LM,LM
+IRN,"Iran, Islamic Rep.",LM,LM,LM,LM,UM,UM
+IRQ,Iraq,UM,LM,LM,LM,LM,UM
+IRL,Ireland,H,H,H,H,H,H
+IMN,Isle of Man,UM,UM,UM,H,H,H
+ISR,Israel,H,H,H,H,H,H
+ITA,Italy,H,H,H,H,H,H
+JAM,Jamaica,LM,LM,LM,LM,UM,UM
+JPN,Japan,H,H,H,H,H,H
+JOR,Jordan,LM,LM,LM,LM,UM,UM
+KAZ,Kazakhstan,..,LM,LM,LM,UM,UM
+KEN,Kenya,L,L,L,L,L,L
+KIR,Kiribati,LM,LM,LM,LM,LM,LM
+PRK,"Korea, Dem. Rep.",LM,LM,L,L,L,L
+KOR,"Korea, Rep.",UM,H,UM,H,H,H
+XKX,Kosovo,..,..,..,..,LM,LM
+KWT,Kuwait,H,H,H,H,H,H
+KGZ,Kyrgyz Republic,..,L,L,L,L,LM
+LAO,Lao PDR,L,L,L,L,LM,LM
+LVA,Latvia,..,LM,LM,UM,UM,H
+LBN,Lebanon,LM,LM,UM,UM,UM,UM
+LSO,Lesotho,L,LM,L,LM,LM,LM
+LBR,Liberia,L,L,L,L,L,L
+LBY,Libya,UM,UM,UM,UM,UM,UM
+LIE,Liechtenstein,..,H,H,H,H,H
+LTU,Lithuania,..,LM,LM,UM,UM,H
+LUX,Luxembourg,H,H,H,H,H,H
+MAC,"Macao SAR, China",UM,H,H,H,H,H
+MKD,"Macedonia, FYR",..,LM,LM,LM,UM,UM
+MDG,Madagascar,L,L,L,L,L,L
+MWI,Malawi,L,L,L,L,L,L
+MYS,Malaysia,LM,UM,UM,UM,UM,UM
+MDV,Maldives,L,LM,LM,LM,UM,UM
+MLI,Mali,L,L,L,L,L,L
+MLT,Malta,UM,UM,H,H,H,H
+MHL,Marshall Islands,..,LM,LM,LM,LM,UM
+MRT,Mauritania,L,L,L,L,LM,LM
+MUS,Mauritius,LM,UM,UM,UM,UM,UM
+MEX,Mexico,UM,UM,UM,UM,UM,UM
+FSM,"Micronesia, Fed. Sts.",..,LM,LM,LM,LM,LM
+MDA,Moldova,..,LM,L,LM,LM,LM
+MCO,Monaco,..,H,H,H,H,H
+MNG,Mongolia,LM,L,L,L,LM,LM
+MNE,Montenegro,..,..,..,..,UM,UM
+MAR,Morocco,LM,LM,LM,LM,LM,LM
+MOZ,Mozambique,L,L,L,L,L,L
+MMR,Myanmar,L,L,L,L,L,L
+NAM,Namibia,LM,LM,LM,LM,UM,UM
+NRU,Nauru,..,..,..,..,..,..
+NPL,Nepal,L,L,L,L,L,L
+NLD,Netherlands,H,H,H,H,H,H
+NCL,New Caledonia,UM,H,H,H,H,H
+NZL,New Zealand,H,H,H,H,H,H
+NIC,Nicaragua,LM,L,L,LM,LM,LM
+NER,Niger,L,L,L,L,L,L
+NGA,Nigeria,L,L,L,L,LM,LM
+MNP,Northern Mariana Islands,..,H,H,UM,H,H
+NOR,Norway,H,H,H,H,H,H
+OMN,Oman,UM,UM,UM,UM,H,H
+PAK,Pakistan,L,L,L,L,LM,LM
+PLW,Palau,..,..,UM,UM,UM,UM
+PAN,Panama,LM,LM,UM,UM,UM,UM
+PNG,Papua New Guinea,LM,LM,LM,L,LM,LM
+PRY,Paraguay,LM,LM,LM,LM,LM,LM
+PER,Peru,LM,LM,LM,LM,UM,UM
+PHL,Philippines,LM,LM,LM,LM,LM,LM
+POL,Poland,LM,LM,UM,UM,H,H
+PRT,Portugal,UM,H,H,H,H,H
+PRI,Puerto Rico,UM,UM,UM,H,H,H
+QAT,Qatar,H,H,H,H,H,H
+ROU,Romania,LM,LM,LM,UM,UM,UM
+RUS,Russian Federation,..,LM,LM,UM,UM,H
+RWA,Rwanda,L,L,L,L,L,L
+WSM,Samoa,LM,LM,LM,LM,LM,LM
+SMR,San Marino,..,..,H,H,H,H
+STP,São Tomé and Principe,L,L,L,L,LM,LM
+SAU,Saudi Arabia,UM,UM,UM,H,H,H
+SEN,Senegal,LM,L,L,L,LM,LM
+SRB,Serbia,..,..,..,..,UM,UM
+SYC,Seychelles,UM,UM,UM,UM,UM,UM
+SLE,Sierra Leone,L,L,L,L,L,L
+SGP,Singapore,H,H,H,H,H,H
+SXM,Sint Maarten (Dutch part),..,..,..,..,H,H
+SVK,Slovak Republic,..,LM,UM,UM,H,H
+SVN,Slovenia,..,UM,H,H,H,H
+SLB,Solomon Islands,L,LM,L,L,LM,LM
+SOM,Somalia,L,L,L,L,L,L
+ZAF,South Africa,UM,UM,UM,UM,UM,UM
+SSD,South Sudan,..,..,..,..,..,LM
+ESP,Spain,H,H,H,H,H,H
+LKA,Sri Lanka,L,L,LM,LM,LM,LM
+KNA,St. Kitts and Nevis,UM,UM,UM,UM,UM,H
+LCA,St. Lucia,LM,UM,UM,UM,UM,UM
+MAF,St. Martin (French part),..,..,..,..,H,H
+VCT,St. Vincent and the Grenadines,LM,LM,LM,UM,UM,UM
+SDN,Sudan,L,L,L,L,LM,LM
+SUR,Suriname,UM,LM,LM,LM,UM,UM
+SWZ,Swaziland,LM,LM,LM,LM,LM,LM
+SWE,Sweden,H,H,H,H,H,H
+CHE,Switzerland,H,H,H,H,H,H
+SYR,Syrian Arab Republic,LM,LM,LM,LM,LM,LM
+TWN,"Taiwan, China",H,H,H,H,H,H
+TJK,Tajikistan,..,L,L,L,L,L
+TZA,Tanzania,L,L,L,L,L,L
+THA,Thailand,LM,LM,LM,LM,UM,UM
+TLS,Timor-Leste,..,..,..,L,LM,LM
+TGO,Togo,L,L,L,L,L,L
+TON,Tonga,LM,LM,LM,LM,LM,UM
+TTO,Trinidad and Tobago,UM,UM,UM,UM,H,H
+TUN,Tunisia,LM,LM,LM,LM,UM,UM
+TUR,Turkey,LM,LM,UM,UM,UM,UM
+TKM,Turkmenistan,..,LM,LM,LM,LM,UM
+TCA,Turks and Caicos Islands,..,..,..,..,H,H
+TUV,Tuvalu,..,..,..,..,LM,UM
+UGA,Uganda,L,L,L,L,L,L
+UKR,Ukraine,..,LM,L,LM,LM,LM
+ARE,United Arab Emirates,H,H,H,H,H,H
+GBR,United Kingdom,H,H,H,H,H,H
+USA,United States,H,H,H,H,H,H
+URY,Uruguay,UM,UM,UM,UM,UM,H
+UZB,Uzbekistan,..,LM,L,L,LM,LM
+VUT,Vanuatu,LM,LM,LM,LM,LM,LM
+VEN,"Venezuela, RB",UM,LM,UM,UM,UM,UM
+VNM,Vietnam,L,L,L,L,LM,LM
+VIR,Virgin Islands (U.S.),H,H,H,H,H,H
+PSE,West Bank and Gaza,..,LM,LM,LM,LM,LM
+YEM,"Yemen, Rep.",LM,L,L,L,LM,LM
+ZMB,Zambia,L,L,L,L,LM,LM
+ZWE,Zimbabwe,LM,L,L,L,L,L
