@@ -24,7 +24,7 @@ DFND __Tableau__ project can be found [here](https://public.tableau.com/profile/
 
 ## Data Analyst Nanodegree
 
-[dand-sql](https://github.com/TianaQ/udacity-bertelsmann-ds-challenge/tree/master/3-dand-sql) - the project required applying SQL to obtain data from the database
+[dand-sql](https://github.com/TianaQ/udacity-bertelsmann-ds-challenge/tree/master/3-dand-sql) - the project required applying SQL to obtain data for chosen cities from the database of averade temperatures in student workspace as .csv files, and describing the trends. I recreated the database locally for selected data to conduct EDA in R and produce the report using RMarkdown.
 >See [Weather trends report](https://tianaq.github.io/udacity-bertelsmann-ds-challenge/3-dand-sql/weather_trends.html)
 
 [dand-intro-to-python](https://github.com/TianaQ/udacity-bertelsmann-ds-challenge/tree/master/4-dand-intro-to-python)
