@@ -1,0 +1,1308 @@
+---
+title: "Exploratory Data Analysis with R: Prosper Loans"
+output: html_document
+---
+
+#### _by Tatiana Kurilo_  
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo=FALSE, warning=FALSE, message=FALSE)
+```
+
+```{r packages}
+# Loading packages for the project
+library(ggplot2)
+library(gridExtra)
+library(scales)
+library(lubridate)
+library(usmap)
+library(dplyr)
+```
+
+The data set explored in this project contains information on 113,937 loans obtained via Prosper - the first American company in the field of peer-to peer lending.  Borrowers request personal loans on Prosper and investors can fund the loan amount partially or in full.  
+There are 81 variables on each loan, including loan amount, borrower rate (or interest rate), current loan status, borrower income, borrower employment status, borrower credit history, and the latest payment information. The time period for which the data were collected lasts from November, 2005 till March, 2014.  
+
+##### Default Data Structure {#structure}
+
+<input type=button class=hideshow></input>
+```{r load_data}
+# Loading data
+loans <- read.csv('prosperLoanData.csv')
+str(loans)
+```
+[to the beginning](#structure)  
+  
+##### Summary Statistics {#summary}
+
+<input type=button class=hideshow></input>
+```{r summary}
+# summary stats
+summary(loans)
+```
+[to the beginning](#summary)  
+
+```{r date_columns_to_date_type}
+# changing date variables to date type
+loans$ListingCreationDate <- ymd_hms(loans$ListingCreationDate)
+loans$LoanOriginationDate <- ymd_hms(loans$LoanOriginationDate)
+loans$ClosedDate <- ymd_hms(loans$ClosedDate)
+loans$DateCreditPulled <- ymd_hms(loans$DateCreditPulled)
+loans$FirstRecordedCreditLine <- ymd_hms(loans$FirstRecordedCreditLine)
+```
+
+
+## Data Preparation {#preparation}
+The data set uses 4 fields of unique keys to identify each listing:   
+__`ListingKey`__ - unique key for each listing, same value as the 'key' used in the listing object in the API.  
+__`ListingNumber`__ - the number that uniquely identifies the listing to the public as displayed on the website.  
+__`LoanKey`__ - equals to the `ListingKey` and the 'key' in the API.  
+__`LoanNumber`__ - unique numeric value associated with the loan.  
+
+Since all four variable can be used interchangeably for purposes of listings identification, three of them can be omitted.  __`ListingKey`__ will be used in further analysis.
+
+```{r drop_excess_indentifiers}
+loans <- subset(loans, select = -c(ListingNumber, LoanKey, LoanNumber))
+```
+
+Though this data set may be considered tidy data in general, we can see from summary statistics, that there is a number of __`ListingKey`__ values which have several rows for each listing key. 
+
+##### Number of occurrence of listing keys
+
+```{r listing_key_occur}
+key_occur <- table(subset(table(loans$ListingKey), table(loans$ListingKey) > 0))
+key_occur
+```
+  
+Here is one example with the maximum of 6 rows per key.  
+
+##### Example {#same_key_example}  
+
+<input type=button class=hideshow></input>
+```{r max_rows_per_key}
+loans[which(loans$ListingKey == names(sort(table(loans$ListingKey), 
+                                           decreasing = TRUE)[1])), ]
+```
+[to the beginnging](#same_key_example)
+
+As can be seen from the example above, the only variable that changes for this listing key is __`ProsperScore`__ which is a custom risk score built using historical Prosper data and is applicable for loans originated after July 2009. The distribution of the listings for which additional rows occurred because of the change in `ProsperScore` across the time line shows that the practice of recording score changes was implemented only in most recent data.  
+
+```{r not_unique_keys_date_hist}
+not_unique <- names(subset(table(loans$ListingKey), 
+                           table(loans$ListingKey) > 1))
+not_unique_df <- subset(loans, ListingKey %in% not_unique)
+
+min_date <- min(loans$ListingCreationDate)
+max_date <- max(loans$ListingCreationDate)
+
+ggplot(data = not_unique_df, aes(ListingCreationDate)) +
+   geom_histogram(bins = 100) +
+   xlim(min_date, max_date) +
+   ggtitle('Listing keys with several rows of data by listing creation date')
+```
+
+Since only `ProsperScore` changes, this leads to double count of these listings for other variables like `LoanStatus`, `ListingCategory`, etc. Of __`r sum(key_occur)`__ unique listing keys __`r sum(key_occur[2:length(key_occur)])`__ produce __`r sum(key_occur[2:length(key_occur)] * strtoi(names(key_occur[2:length(key_occur)]))) - sum(key_occur[2:length(key_occur)])`__ rows of such duplicates. There is no specific logging of changes in `ProsperScore` in the data, and - taking into account the intent of omitting `ProsperScore` from further analysis because of high proportion of NA values - the rows where listing keys appear for the second and time and more can be dropped to avoid double count.
+
+```{r clearing_duplicates}
+# excluding ProsperScore variable and duplicated rows 
+df <- subset(loans, select = -c(ProsperScore))
+is_copy <- duplicated(df)
+
+df <-subset(df, !is_copy)
+```
+
+```{r na_columns}
+prop_na <- sort(colSums(is.na(df))/nrow(df))
+na_columns <- names(prop_na[prop_na > 0.25])
+```
+
+The high proportion of NA values is an issue for __`r length(na_columns)`__ columns: in 5 columns the proportion of NA values exceeds 25%, in 10 it is over 50% and goes up to 80-85%.
+
+##### Columns with proportion of NA higher than 25%
+
+```{r na_columns_output}
+prop_na[prop_na > 0.25]
+```
+`ClosedDate` is applicable for Cancelled, Completed, Chargedoff and Defaulted loan statuses, so we can assume that _about half of the loans in the data set are in progress_.  
+
+`EstimatedEffectiveYield`, `EstimatedLoss`, `EstimatedReturn`, `ProsperRating..numeric.`, `ProsperScore` were implemented in July 2009. It leads to missing values for earlier data, which are about 26% of the data set. `ProsperRating..Alpha.` has a comparable number of empty string values for the same reason. On the other hand, `CreditGrade` - the credit rating that was assigned at the time the listing went live - contains `r table(loans$CreditGrade == '')[2]` empty strings of `r nrow(loans)` rows of original data, because it is applicable only for listings before 2009.  
+
+`TotalProsperLoans`, `TotalProsperPaymentsBilled`, `OnTimeProsperPayments`, `ProsperPaymentsLessThanOneMonthLate`, `ProsperPaymentsOneMonthPlusLate`, `ProsperPrincipalBorrowed`, `ProsperPrincipalOutstanding`, `ScorexChangeAtTimeOfListing` have null values for cases when the borrower had no prior loans with Prosper. That means that _about 81% of loans are first Prosper loans for borrowers_.  
+
+`LoanFirstDefaultedCycleNumber` is the cycle the loan was charged off, if ever. 85% of missing values result in _less than 15% of loans that were charged off_.  
+
+```{r year_quarter_month_vars}
+df$ListingYear <- factor(as.integer(year(df$ListingCreationDate)))
+df$LoanYear <- factor(as.integer(year(df$LoanOriginationDate)))
+df$ListingMonth <- month(df$ListingCreationDate, label = TRUE)
+df$LoanMonth <- month(df$LoanOriginationDate, label = TRUE)
+
+df$LoanOriginationQuarter <- factor(quarter(df$ListingCreationDate, 
+                                            with_year = TRUE, fiscal_start = 1))
+df$LoanOriginationQuarter.Only <- factor(quarter(df$ListingCreationDate, 
+                                                 with_year = FALSE, 
+                                                 fiscal_start = 1))
+```
+
+## Univariate Plots Section
+
+##### Listings by Creation Date
+
+```{r listing_creation_hist}
+ggplot(data = df, aes(ListingCreationDate)) +
+  geom_histogram(bins = 100) 
+```
+  
+We can clearly see two periods in data - from the end of 2005 to the middle of 2009, corresponding to the relaunch the company conducted in 2009. The same pattern can be seen in loan origination dates.
+
+```{r loan_origination_hist}
+ggplot(data = df, aes(LoanOriginationDate)) +
+  geom_histogram(bins = 100)
+```
+  
+Since it takes some time for listings to become loans, the distribution of loan originaion dates is slightly translated to the right, compared to the listing creation dates. We can also notice, that after the relauch the number of listing/loans in 2010-2011 was about half lower than it was in 2007-2009. However, the number of loans started growing in 2011 and, after some decrease to pre-relaunch levels in the beginning of 2013, by the end of the period in question achived the number of listing/loans, which is about 3 times higher, than it was before relaunch.
+
+```{r listings_by_month_bar}
+p1 <- ggplot(df, aes(ListingMonth)) +
+  geom_bar()
+
+p2 <- ggplot(df, aes(LoanMonth)) +
+  geom_bar()
+
+grid.arrange(p1, p2,ncol = 2)
+```
+
+```{r listings_by_quarter_bar}
+ggplot(df, aes(LoanOriginationQuarter.Only)) +
+  geom_bar()
+```
+  
+As for seasonal patterns, April is the month of lowest number of listings created and loans originated, while January is of highest. This results in the second quarter being the lowest in term of new loans, and the decrease during the months of the first quarter results in lower total in comparison with the fourth quarter, which holds the highest value. Still, as could be seen from the previous charts of number of listings and loans by months and years, the last months of 2013 and of the first months of 2014 have pronounced impact on total counts. This will affect the seasonal picture as well. 
+
+##### Loan original amount distribution
+
+```{r loan_amount_hist}
+ggplot(data = df, aes(LoanOriginalAmount)) +
+  geom_histogram(binwidth = 500, color = 'black', fill = '#88ee88') +
+  scale_x_continuous(breaks = seq(0, 40000, 2500)) +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1))
+```
+  
+As can be seen from the chart above, the borrowes tend to ask for some rounded amounts: about `r round(100 * sum(df$LoanOriginalAmount %% 1000 == 0)/nrow(df), 1)`% of loans are in thousands, another `r round(100 * sum((df$LoanOriginalAmount %% 500 == 0) & (!df$LoanOriginalAmount %% 1000 == 0))/nrow(df), 1)`% are divisible by \$500. The most popular loan amounts are \$4,000, \$10,000, and \$15,000, though 75% of all loans are below \$12,000. 
+The overall distribution is right-skewed with range from \$1,000 to \$35,000, the median of \$6,500 and the mean of \$8,337.
+
+```{r loan_amount_summary}
+summary(df$LoanOriginalAmount)
+```
+
+##### Average loan amounts by year
+
+```{r avg_amount_per_year}
+tapply(df$LoanOriginalAmount, df$LoanYear, mean)
+```
+
+```{r avg_amount_per_year_plot}
+plot(tapply(df$LoanOriginalAmount, df$LoanYear, mean))
+```
+
+Loan amounts have also grown in the recent years, after some decrease in the middle of the period, following the total number of listings and loans.  
+  
+##### Loan terms
+
+```{r term_hist}
+ggplot(data = df, aes(Term)) +
+  geom_histogram()
+```
+
+The chart shows that loan terms are descrete and have a limited number of possible values, which can be presented in a shorter form of a table.
+
+```{r term_table}
+table(df$Term, useNA = 'ifany')
+```
+
+```{r term_table_prop}
+df$Term <- as.factor(df$Term)
+100 * table(df$Term)/nrow(df)
+```
+
+There are three loan terms used in Prosper: 12, 36 and 60 months, which equals to 1, 3 or 5 years. Most loans - `r round(max(100 * table(df$Term)/nrow(df)), 1)`% - are given for 3 years, about one fifth of loans have 5 year terms.
+
+```{r loar_amount_by_term}
+ggplot(data = df, aes(LoanOriginalAmount)) +
+  geom_histogram(bins = 20, color = 'black', fill = '#88ee88') +
+  scale_x_continuous(breaks = seq(0, 40000, 2500)) +
+  facet_wrap(~ Term, ncol = 1)
+```
+
+3-year loans on average tend to be for lower amounts, than 5-year loans. The number of 1-year loans is small, but it it closer to 3-year loans distribution with the prevalence of lower amounts.
+
+```{r loan_date_by_term}
+ggplot(aes(x = ListingCreationDate), data = subset(df, !is.na(Term))) +
+  geom_freqpoly(aes(color = Term)) +
+  scale_color_brewer(palette = 'Set1')
+```
+
+As for loan origination dates for different terms, on the time line we can see, that 1-year loans were introduced for a period of time during 2011-2014, after which the company seems to seize this option. 5-year loans were also implemented around 2011, and the number of such loans has grown noticeably in the following years.   
+Since the longer terms on average tend to have highter loan amounts, this leads to higher mean loan amounts in more recent years. The loan amounts should be explored regarding not only time period, but loan terms as well.
+  
+##### Rates
+
+```{r borrower_rate_hist}
+ggplot(data = df, aes(BorrowerRate)) +
+  geom_histogram(binwidth = 0.01, color = 'black', fill = '#88ee88') +
+  scale_x_continuous(breaks = seq(0, 0.6, 0.05))
+```
+
+```{r borrower_rate_summary}
+summary(df$BorrowerRate)
+```
+
+Borrowers' ARP is based on their interest rates, with some additional fees, so it is expectanly follows the same distribution, slightly translated to the right.  
+
+```{r borrower_apr_hist}
+ggplot(data = df, aes(BorrowerAPR)) +
+  geom_histogram(binwidth = 0.01, color = 'black', fill = '#8888ee') +
+  scale_x_continuous(breaks = seq(0, 0.6, 0.05))
+```
+
+```{r borrower_apr_summary}
+summary(df$BorrowerAPR)
+```
+
+Lenders' yield is also based on borrower's rate minus service fees of the platform, so it also follows the same distribution, but slightly translated to the left.
+
+```{r lender_yield_hist}
+ggplot(df, aes(LenderYield)) +
+  geom_histogram(binwidth = 0.01, color = 'black', fill = '#ee8888') +
+  scale_x_continuous(breaks = seq(0, 0.6, 0.05))
+```
+
+```{r lender_yield_summary}
+summary(df$LenderYield)
+```
+
+##### Number of invertors per listing
+
+```{r investors_hist}
+ggplot(df, aes(Investors)) +
+  geom_histogram(bins = 100)
+```
+
+The distribution of investors per listing is right-skewed, with the mode in the 1st percentile of the number range. We can change the scale to logariphmic to take  a closer look into smaller values.
+
+```{r investors_log_scale_hist}
+ggplot(df, aes(Investors)) +
+  geom_histogram(bins = 50) + 
+  scale_x_log10()
+```
+
+```{r investors_summary}
+summary(df$Investors)
+```
+
+```{r one_inverstor_table}
+print('df$Investors == 1')
+round(100 * table(df$Investors == 1)/nrow(df), 2)
+```
+As can be seen from the histogram, a lot of loans are funded by a small number of investors, 24% - by only one. The average number of investors is 44 in terms of the median or about 80 in terms of the mean.
+
+##### Monthly payments
+
+```{r monthly_payment_hist}
+ggplot(df, aes(MonthlyLoanPayment)) +
+  geom_histogram(binwidth = 100, color = 'black', fill = '#88ee88') +
+  scale_x_continuous(breaks = seq(0, 2000, 100)) +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1))
+```
+
+```{r monthly_payment_summary}
+summary(df$MonthlyLoanPayment)
+```
+
+75% of loans have monthly payments lesser than \$`r summary(df$MonthlyLoanPayment)[5]`, with average monthly payment of \$`r summary(df$MonthlyLoanPayment)[4]`.
+
+##### Loans by loan status
+
+```{r loan_status_reorder_barplot}
+status_ordered <- c('Cancelled', 'Chargedoff', 'Defaulted', 'Completed',  
+                  'FinalPaymentInProgress', 'Current', 'Past Due (1-15 days)',
+                  'Past Due (16-30 days)', 'Past Due (31-60 days)', 
+                  'Past Due (61-90 days)', 'Past Due (91-120 days)', 
+                  'Past Due (>120 days)')
+
+
+df$LoanStatus <- ordered(df$LoanStatus, levels = status_ordered)
+
+ggplot(data = df, aes(LoanStatus)) +
+  geom_bar() +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1))
+```
+
+##### Proportions of each loan status
+
+```{r loan_status_prop}
+sort(round(table(df$LoanStatus)/nrow(df), 3), decreasing = TRUE)
+```
+
+Of all loans in the data set, about 51% are loans in progress, `r round(100 * sum(table(df$LoanStatus)[7:12]/nrow(df)), 2)`% are past due to some extent, 49.7% are paid on time. 33% of loans are fully paid by borroweds, less than 0.5% loans defaulted, about 10.5% were charged off. As for dynamics, the number of charged-off loans decreased in 2010-2012, getting back to levels of 2008 in 2014, while the number of defaulted loans noticeably decreased in 2010-2014 in comparison with the earlier period (see the chart below).  
+
+```{r closed_loans_by_date_and_status_facet}
+ggplot(data = subset(df, !is.na(ClosedDate)), aes(ClosedDate)) +
+  geom_histogram(bins = 100) +
+  facet_wrap(~ LoanStatus, ncol = 2)
+```
+
+
+##### Average loan original amount for each loan status
+
+```{r mean_loan_amount_by_loan_status}
+tapply(df$LoanOriginalAmount, df$LoanStatus, mean)
+```
+
+The average amount of current loans is higher than of those that are closed, corresponding to the trends mentioned above in Loan amount and Term sections.
+
+##### Listing categories
+
+```{r listing_categories_to_cat_barplot}
+cats <-  c('Not Available', 'Debt Consolidation', 'Home Improvement', 
+           'Business', 'Personal Loan', 'Student Use', 'Auto', 'Other', 
+           'Baby&Adoption', 'Boat', 'Cosmetic Procedure', 'Engagement Ring', 
+           'Green Loans', 'Household Expenses', 'Large Purchases', 
+           'Medical/Dental', 'Motorcycle', 'RV', 'Taxes', 'Vacation', 
+           'Wedding Loans')
+
+df$ListingCategory <- as.factor(df$ListingCategory..numeric.)
+
+levels(df$ListingCategory) <- cats
+
+ggplot(data = df, aes(ListingCategory)) +
+  geom_bar() +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1))
+```
+
+As can be seen on the plot, the most frequent purpose of loans is debt consolidation. Still, it looks rather strange, that for so many options in listing categories the second most popular category is "Not Available", meaning that either the borrowers aren't willing to declare the purpose of their loans, or the list of categories has changed to a more detailed version only recently.
+
+##### Borrowers by income
+
+```{r income_range_bar}
+income_ordered <- c("Not displayed", "Not employed", "$0", "$1-24,999", 
+                    "$25,000-49,999", "$50,000-74,999", "$75,000-99,999", 
+                    "$100,000+")
+
+df$IncomeRange <- ordered(df$IncomeRange, levels = income_ordered)
+
+ggplot(data = df, aes(IncomeRange)) +
+  geom_bar() +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1))
+```
+
+`r sum(round(100 * table(df$IncomeRange, useNA = 'ifany') / nrow(df), 1)[6:8])`% of listings were created by the borrowers, who declared their income to be higher than \$50,000. However, the income range variable also seems to have undergone some changes over time, considering three levels having the meaning close to "zero income".  
+
+```{r income_range_prop}
+round(100 * table(df$IncomeRange, useNA = 'ifany') / nrow(df), 2)
+```
+
+##### Borrowers by states
+
+```{r borrowers_by_state_map}
+borrowers_by_state <- table(df$BorrowerState)
+states <- data.frame(borrowers_by_state[2:length(borrowers_by_state)])
+names(states) <- c('state', 'NumberOfBorrowers')
+
+usmap::plot_usmap(data = states, 
+                  values = 'NumberOfBorrowers', lines = 'black') +
+  scale_fill_continuous(
+    low = 'white', high = 'black', 
+    name = 'Number Of Borrowers', label = scales::comma) + 
+  labs(title = 'Prosper Borrowers By State') +
+  theme(legend.position = 'right') 
+```
+
+##### Top ten states, %
+
+```{r top_ten_states_prop}
+sort(round(borrowers_by_state/nrow(df), 3) * 100, decreasing = TRUE)[1:10]
+```
+
+##### Borrowers by employment status
+
+```{r employment_status_bar}
+ggplot(data = df, aes(EmploymentStatus)) + 
+  geom_bar() +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1))
+```
+Once again, the levels of `Employment Status` variable, some of which are of the same meaning, may be the result of some changes in the required information. However, definitely most borrowers are employed.
+
+##### Borrowers by occupation
+
+```{r occupation_bar, fig.height=8}
+ggplot(data = df, aes(Occupation)) + 
+  geom_bar() +
+  coord_flip()
+```
+
+##### Top ten occupations, %
+
+```{r top_10_occupations_prop}
+sort(round(100 * table(df$Occupation)/nrow(df ), 2), decreasing = TRUE)[1:10]
+```
+
+##### Borrowers by credit score
+
+Each bar represents the number of listings by borrowers with a specific credit score range, encoded with two variables `CredirScoreRangeLower` and `CreditScoreRangeUpper` with the length of 20 points (for example, 660-679).
+
+```{r credit_score_hist}
+ggplot(data = df, aes(CreditScoreRangeLower)) +
+  geom_histogram(binwidth = 20, color = 'black', fill = '#88ee88') +
+  scale_x_continuous(breaks = seq(0, 900, 20)) + 
+  theme(axis.text.x = element_text(angle = 90, hjust = 1))
+```
+
+```{r credit_score_summary}
+summary(df$CreditScoreRangeLower)
+```
+
+For easier interpretation the credit score groups were added, based on FICO score intervals, published on [CreditCarma.com](https://www.creditkarma.com/advice/i/credit-score-ranges/)
+
+```{r credit_score_by_groups_hist}
+df$CreditScoreInterval <- cut(df$CreditScoreRangeLower, 
+                              breaks = c(0, 250, 580, 670, 740, 800, 900), 
+                              include.lowest = TRUE, right = FALSE)
+
+df$CreditScoreGroup <- as.factor(df$CreditScoreInterval)
+levels(df$CreditScoreGroup) <- c('Too low', 'Poor', 'Fair', 
+                                 'Good', 'Very Good', 'Excellent')
+
+ggplot(subset(df, !is.na(CreditScoreRangeLower)), 
+       aes(CreditScoreRangeLower, fill = CreditScoreGroup)) +
+  geom_bar() +
+  scale_x_continuous(breaks = seq(0, 900, 20)) + 
+  theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
+  scale_fill_brewer(palette = "Spectral")
+```
+
+##### Borrowers by credit score groups, %
+
+```{r credit_groups_prop}
+round(100 * table(df$CreditScoreGroup, useNA = 'ifany')/nrow(df), 2)
+```
+
+`r sum(round(100 * table(df$CreditScoreGroup, useNA = 'ifany')/nrow(df), 2)[4:6])`% of borrowers have credit scores in range of Good and better.
+
+##### Debt to income ratio
+
+```{r debt_to_income_hist}
+ggplot(data = df, aes(DebtToIncomeRatio)) +
+  geom_histogram(bins = 100)
+```
+
+```{r debt_to_income_summary}
+summary(df$DebtToIncomeRatio)
+```
+
+For 99% of borrowers who reported the information on debt-to-income ratio, the ratio is below `r quantile(df$DebtToIncomeRatio, 0.99, na.rm = TRUE)`, which makes us wonder who are the outliers whose debt is times higher than income. We can check how the borrowers with highest ratio differ in other aspects, for example, their loan status. Here are two plots on `LoanStatus` for those who have debt-to-income ratio between 1 and 5 (on the left plot) and over 5 (on the right plot).
+
+```{r high_dti_ratio_loan_status}
+p1 <- ggplot(data = subset(df, DebtToIncomeRatio > 1 & DebtToIncomeRatio < 5), 
+             aes(LoanStatus)) +
+  geom_bar() +
+  scale_y_continuous() +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1))
+
+p2 <- ggplot(data = subset(df, DebtToIncomeRatio > 5), aes(LoanStatus)) +
+  geom_bar() +
+  scale_y_continuous() + 
+  theme(axis.text.x = element_text(angle = 90, hjust = 1))
+
+grid.arrange(p1, p2, ncol = 2)
+```
+
+
+# Univariate Analysis
+
+### What is the structure of your dataset?
+
+The data set containts information on `r nrow(df)` unique listings created at Prosper.com to obtain loans. Each listing includes the following:  
+- its indentification numbers and time of creation;  
+- the information about the borrower - location, income, employment and occupation, credit score, debt to income ratio and other aspects of borrower's financial situation, and their history with Prosper.com on the listing in question and previous loans, if any;  
+- the information about the loan - date of origination, amount, borrowers' rate and APR, lenders' yield, loan status and closed date (if closed) and the information about the most recent payment.  
+
+For all listing in the data set there were loans originated.  The average loan amount is `r mean(df$LoanOriginalAmount)`, but this number differs a lot from year to year, taking into account the pause in 2008-2009 and the growth of 2013-2014, the latter also marked by the increasing number of 5-year loans. The most frequent purpose of loans is debt consolidation.
+About half of the loans are closed, others are still in progress, of which less than 5% are past to some extent. The time interval is stretched from `r format(date(min(df$ListingCreationDate)), "%B, %d, %Y")` to `r format(date(max(df$ListingCreationDate)), "%B, %d, %Y")` in terms of listing creation time. 24% of loans are funded by one investor.
+There are three options of loan terms: 1 year, 3 and 5 year.  1-year loans appear to be a temporary option, available in 2011-2013, while 5-year loans were introduced in the middle of the time period in question and became a growing category.  
+Most borrowers are employed, have income range higher than \$50,000 and credit score better than Good (670+). There are borrers from all states, the highest number - in California (13%), followed by Texas, Florida, New York (6%) and Illinois (5%). The average number of current credit lines is about 10 and the median debt-to-income ratio is 22%.  
+
+### What is/are the main feature(s) of interest in your dataset?
+
+The main feature of interest in the data set for me is the company's progress over time. We can see, that in the early period of data the company had progress in numbers of listings, yet it had a pause in 2009 (apparently the pause coinsides in time with the Great Recession of 2008-2009). After this pause it restarted with lower listing numbers, but made a great progress in the following years. From the variable dictionary and the behavior of some variables (`Terms` and `ListingCategory`, for example) we may assume, that some approaches and policies had changed, affecting the company's performance and maybe the types of clients it is attracting (though we may have to take into account the overall improvement of the financial situation). 
+
+### What other features in the dataset do you think will help support your \
+investigation into your feature(s) of interest?  
+
+I suppose that studying the characteristics of borrowers for any change the relauch was followed by, can also help in understanding of the effect of Prosper's policy changes.
+
+### Did you create any new variables from existing variables in the dataset?
+
+I added `ListingYear` / `LoanYear` and `ListingMonth` / `Loan Month`, based on `ListingCreationDate` / `LoanOriginationDate` to make these time parameters more accessible. For borrowers' credit scores I created a new variable to map the values to the general ranges, usually used to describe scores: "Poor", "Fair", "Good", "Very Good" and "Excellent" (I also added "Too low" level for scores below "Poor"). Also I added a categorical equivalent for `ListingCategory..numeric.` based on data dictionary for better readability.
+
+### Of the features you investigated, were there any unusual distributions? \
+Did you perform any operations on the data to tidy, adjust, or change the form \
+of the data? If so, why did you do this?  
+
+I converted variables that contain date and time information from character type to date time and modified `LoanOriginationQuarter` for easier sorting. I also excluded duplicated rows for a set of listings keys (see more information in [Data Preparation](#preparation) section).  
+The distribution of `Term` variable showed the limited number of values, so I converted it to a factor with 3 levels: 12, 36 and 60 months.  
+The distribution of `DebtToIncomeRatio` has some number of outliers, who demostate more charged-off loan status as the ratio grows. Also they have less current loans, which may reflect some changes in policies about this index, so the outliers may require further investigation.
+There is a significant proportion of loans - about 24%, that are funded by only one investor, as the distribution of investors per loan shows. Any other numbers doesn't yield a comparable percentage, so this kind of loans may be specific in some way.
+Overall I found applying logariphmic scale to count axes useful for making existing small values in specific groups or periods more visible.
+
+# Bivariate Plots Section
+
+#### Time in other variables
+
+##### Number of listings/loans by month and year 
+
+```{r loan_years_and_months_bar_logscale}
+p1 <- ggplot(df, aes(ListingYear, fill = ListingMonth)) +
+  geom_bar() +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
+  scale_fill_brewer(palette = 'Paired') +
+  scale_y_log10() +
+  theme(legend.position="bottom")
+
+p2 <- ggplot(df, aes(LoanYear, fill = LoanMonth)) +
+  geom_bar() +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
+  scale_fill_brewer(palette = 'Paired') +
+  scale_y_log10() +
+  theme(legend.position="bottom")
+
+grid.arrange(p1, p2, ncol = 2, padding = 5)
+```
+
+On the plots above the scale is changed to logariphmic to make all months visible. Here the interruption in data is more detailed - from October, 2008 to April, 2009 for creation of new listings and to May, 2009 for origination of new loans. Still, the scale of number may be confusing for perception of monthly results, which are more accessible without transformations.
+
+```{r loans_by_months_years_bar}
+p1 <- ggplot(df, aes(ListingYear, fill = ListingMonth)) +
+  geom_bar() +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
+  scale_fill_brewer(palette = 'Paired') +
+  theme(legend.position="bottom")
+
+p2 <- ggplot(df, aes(LoanYear, fill = LoanMonth)) +
+  geom_bar() +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
+  scale_fill_brewer(palette = 'Paired') +
+   theme(legend.position="bottom")
+
+grid.arrange(p1, p2, ncol = 2, padding = 5)
+```
+
+##### Listing categories by year of creation
+
+```{r list_cat_by_loan_year}
+ggplot(df, aes(ListingCategory, fill = ListingYear)) +
+  geom_bar() +
+  scale_y_log10() +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
+  scale_fill_brewer(palette = "Spectral")
+```
+
+Adding colors to the plot, based on year (and changing the scale of counts to logariphmic for better visibility of smaller values), we can see, that "Not Available" category was mostly used in listings of 2005-2007 (and seems to be excluded in 2008-2010). "Personal Loan" and "Student Use" were applicable only before 2009 and 2011, respectively. The most detailed categories, like "Vacation", "Medical/Dental" or "Boat", came in use only since 2011 or 2012.  
+
+##### Employment status by year 
+
+```{r reorder_employment_status}
+df$EmploymentStatus <- ordered(df$EmploymentStatus, 
+                               levels = c("", "Not available", "Not employed", 
+                                          "Employed", "Full-time", "Part-time", 
+                                          "Self-employed", "Retired", "Other"))
+```
+
+```{r employment_by_loan_year}
+ggplot(data = df, aes(EmploymentStatus, fill = ListingYear)) + 
+  geom_bar() +
+  scale_y_log10() +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
+  scale_fill_brewer(palette = 'Spectral')
+```
+
+As expected, missing values in employment status of borrowers refer to the earliest period of data. The categories _Employed_ and _Other_ were implemented in 2010. As we can see from the plot below, _Employed_ became the most frequently used status in recent years.
+
+```{r employment_vs_time_freq_poly}
+ggplot(subset(df, !is.na(EmploymentStatus)), aes(LoanOriginationDate)) +
+  geom_freqpoly(aes(color = EmploymentStatus), bins = 50) +
+  scale_color_brewer(palette = 'Spectral')
+```
+
+##### Occupations by year
+
+```{r occupation_by_year, fig.height=8}
+ggplot(data = df, aes(Occupation, fill = LoanYear)) + 
+  geom_bar() +
+  scale_y_log10() +
+  coord_flip() +
+  scale_fill_brewer(palette = 'Spectral')
+```
+
+Though some other categorial variables seem to have changed their levels over time, `Occupation` has observations for each year almost in all its levels. The lack of observations in missing values for 2009-2012 may lead to an assumption, that in these years it was a required field in loan applications. 
+
+##### Income range by year
+
+```{r income_year_bar_loscale}
+ggplot(df, aes(IncomeRange, fill = ListingYear)) + 
+  geom_bar() +
+  scale_y_log10() +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
+  scale_fill_brewer(palette = 'Spectral')
+```
+
+Here all levels, except "Not displayed", were in use since 2007. There are no listings with \$0 income or "Not employed" status, but since these are not very frequently used categories and the data of 2014 include less than 3 months, this is expectant. 
+
+```{r income_range_vs_time_freq_poly}
+ggplot(subset(df, !is.na(IncomeRange)), aes(LoanOriginationDate)) +
+  geom_freqpoly(aes(color = IncomeRange), bins = 50) +
+  scale_color_brewer(palette = 'Spectral')
+```
+
+Exploring income ranges with frequency polygons we can notice, that the most freqent range before relaunch and in the first few years after it was the range of \$25,000-49,999, but in 2013 it changed to \$50,000-74,999.
+
+##### Loan status over time
+
+```{r loan_status_vs_loan_start_freq_poly}
+ggplot(aes(x = LoanOriginationDate), data = df) +
+  geom_freqpoly(aes(color = LoanStatus), bins = 50) +
+  scale_color_brewer(palette = 'Paired')
+```
+
+The charts above shows how the most frequent loan status change from comleted to current for the most recent data. We can also see that the number of loan which are past to some extent, are comparatively low. `FinalPaymentInProgress` describes a rather specific state of loan "life", so its number is expectantly low as well.
+
+#### Closed loans by status {#closed_loans}
+
+```{r closed_loans_hist_by_status}
+p1 <- ggplot(df, aes(ListingCreationDate)) +
+  geom_histogram(bins = 100) 
+
+p2 <- ggplot(subset(df, !is.na(ClosedDate)), aes(ClosedDate)) +
+  geom_histogram(bins = 100)
+
+grid.arrange(p1, p2, ncol = 1)
+```
+
+If we compare the distributions of listings creation by date with the distribution of dates when the listings were closed, we can see the 3-year translation of peaks and downfalls for most of the data: for the pause in the listing creation in 2009 there is a pit on the histogram for closed loans. 
+
+```{r closed_loan_status_vs_loan_start_freq_poly}
+ggplot(subset(df, !is.na(ClosedDate)), aes(ClosedDate)) +
+  geom_freqpoly(aes(color = LoanStatus), bins = 30) +
+  scale_color_brewer(palette = 'Set1')
+```
+
+Of the earliest loans, which all were 3-year loans, we can see an increase of defaulted loans in the second half of 2007 and the inclease of charged-off loans by the beginning of 2008 and upto the first months of 2009. We should mention that the number of defaulted loans descreased pronouncedly in the following years, while the number of charged-off loans started to grow after 2012. But for the latter we should also take into account the growing number of current loans, in which the share of 5-year loans is also growing, so here the comparison of proportions between charged-off and completed loans will be accurate only by 2015-2017 years.
+
+Having compared the loan status frequency over time with the distributions of listings creation and loan closing, we may assume, that the growing share of defaulted and charged-off loans led to the decreased number of loans after relaunch - this might be caused by more strict criteria for borrowers or the lack of funds for dealing with a larger number of loans, or, maybe, by the decreasing of the attractivity for investors and therefore their numbers. We can also suppose that the growing number of completed loans around 2011 created an impusle for growing number of new listings in 2012.
+
+##### Listing life from creation to closing
+
+To get a deeper understading of listings' lasting we can compare the listings creation dates to their closed dates (for the listings, that have a closing date). 
+
+```{r start_vs_closed_scatter}
+ggplot(subset(df, !is.na(ClosedDate)), aes(ListingCreationDate, ClosedDate)) +
+  geom_point(alpha = 0.01, position = 'jitter') +
+  geom_smooth(method = 'lm', linetype = 3)
+```
+
+There is a noticeable line marking the closing of 3-year loans that compose the majority of the data set. We can also see a similar line starting from 2011, which is 2 years lower, which may correspond to the period when 1-year loans were availablel. However there are many listings that were closed much earlier, than their term's end.
+
+```{r closed_loans_subset}
+closed_loans <- subset(df, !is.na(ClosedDate))
+
+closed_loans$Time.Diff <- difftime(closed_loans$ClosedDate, 
+                                   closed_loans$ListingCreationDate, 
+                                   units = "days")
+
+closed_loans$ListingLife.Years <- as.numeric((closed_loans$Time.Diff)) / 365
+
+tapply(closed_loans$ListingLife.Years, closed_loans$LoanStatus, summary)[1:4] 
+```
+
+As can be seen from the summary above, it takes only a short time for a loan to be cancelled, and about a year and a half to reach a charged-off status. 75% of completed loans reach this status in less than 3 years, though the maximum exceed not only the 3-year term, but also 5-year one. The defaulted group has some negative values in the distribution, so it is necessary to study the data for possible errors.
+
+```{r closed_loans_date_error}
+sub <- subset(closed_loans, Time.Diff < 0)
+
+sub[c('ListingKey', 'ListingCreationDate', 'LoanStatus', 'ClosedDate')]
+```
+
+There is only one listing where `ClosedDate` is earlier than `ListingCreationDate`, which is definitely an error. the exclusion of this listing doesn't affect the distribution much, and the minimum is not meaningful.
+
+```{r closed_loans_no_error}
+closed_loans <- subset(closed_loans, !(ListingLife.Years < 0))
+tapply(closed_loans$ListingLife.Years, closed_loans$LoanStatus, summary)[3] 
+```
+
+```{r closed_loans_by_term_box}
+ggplot(closed_loans, aes(LoanYear, ListingLife.Years)) +
+  geom_boxplot(outlier.shape = 1) +
+  facet_wrap(~ Term) +
+  theme(axis.text = element_text(angle = 90, hjust = 1))
+```
+
+Exploring the distribution of listing life (in years) over time and terms, we can see, that for most loans 75% of closed loans had listing life about the length of their term or lower. Аbout 25% of listing tend to have listing life longer than their loan term. For 1-year loans the median is closer to the end of the term, while for 3-year loans the median listing life is close to 2 years. Аbout 25% of listing tend to have listing life longer than their loan term.  
+Starting from 2011 the growing proportion of loans in progress starts affecting the range of the distributions - it includes only the loans that were closed earlier than their terms required. The proportion can be seen in the table and chart below.
+
+```{r status_by_year_prop}
+status_by_year <- table(df$LoanStatus, df$LoanYear, useNA = 'ifany')
+t(round(100 * t(status_by_year)/ colSums(status_by_year), 2))
+```
+
+```{r status_by_year_prop_bar}
+ggplot(df, aes(LoanYear, fill = LoanStatus)) +
+  geom_bar(position = 'fill') +
+  scale_y_continuous(labels = percent_format()) +
+  scale_fill_brewer(palette = "Paired") 
+```
+
+As for loan amount, it seems not to have any relatioship with closed loan status, expect for cancelled loans, but their number is quite small. For completed, defaulted and charged-off loans the distribution are more or less the same (the outliers in _completed_ loans may refer to the loans completed in 2013-2014, when such amount became available, but the proportion of other closed status is too low for these years due to the term lengths).
+
+```{r amount_by_status_box}
+ggplot(subset(df, !is.na(ClosedDate)), 
+       aes(LoanStatus, LoanOriginalAmount, fill = LoanStatus)) +
+  geom_boxplot() + 
+  scale_fill_brewer(palette = 'Spectral') 
+```
+
+##### Loan waiting time
+
+Another aspect of listing life is the time between the listing was created and the origination of the loan. 
+
+```{r listing_start_vs_loan_start_scatter}
+ggplot(df, aes(ListingCreationDate, LoanOriginationDate)) +
+  geom_point(alpha = 0.02, position = 'jitter') +
+  geom_smooth(method = 'lm', linetype = 3, color = 'red')
+```
+
+From the chart above we can state that waiting time is usually rather short, though in more recent years it may become longer. However, there were period there the period of waiting could reach years, though it referred to only a small number of loans. The distribution of days in waiting can help us to be more precise.
+
+```{r waiting_summary}
+df$LoanWaitingDays <- as.numeric(df$LoanOriginationDate 
+                                 - df$ListingCreationDate) / 24
+
+summary(df$LoanWaitingDays)
+```
+
+```{r waiting_hist}
+ggplot(df, aes(LoanWaitingDays)) +
+  geom_histogram(bins = 20, color = 'black', fill = '#88ee88') +
+  scale_x_log10()
+```
+
+The overall distribution of days in waiting is centered at about 10 days. We can plot it over the years of listing creation to see if there are some changes corresponding to splashes on the scatterplot.  
+
+```{r waiting_by_year_box}
+ggplot(df, aes(ListingYear, LoanWaitingDays + 1)) +
+  geom_boxplot(outlier.shape = 1) +
+  scale_y_log10() + 
+  theme(axis.text.x = element_text(angle = 90, hjust = 1))
+```
+
+As can be seen from the plot above, the median waiting time was the highest in 2009, while the longest waiting time together with a lot of outliers could be seen in 2008. This period coincides with the Great recession, so we may assume either an increase of borrowers who might be concidered not very reliable or the decrease of the number of investors due to the overall economic situation. Also the relaunch of Prosper's website in 2009 might have affected the waiting time for the listings created before the relaunch.   
+
+We can check if the duration of waiting may be affected by some characteristics of the borrowers, for example, their employment status or credit score.  
+
+```{r waiting_by_employment_box}
+ggplot(df, aes(EmploymentStatus, LoanWaitingDays + 1)) +
+  geom_boxplot(outlier.shape = 1) +
+  scale_y_log10() 
+```
+
+For the employment status, though the median waiting time for "Employed" and "Self-Employed" categories is slightly lower, the largest number of outliers can be seen in "Full-time" category, which was the most numerous before "Employed" level was implemented.   
+
+We can also check if the ability to verify the income had any impact on the distribution of waiting days.  
+
+```{r waiting_by_verifiable_income_box}
+ggplot(df, aes(IncomeVerifiable, LoanWaitingDays + 1)) +
+  geom_boxplot(outlier.shape = 1) +
+  scale_y_log10()
+```
+```{r verifiable_income_table}
+print("Income Verifiable")
+table(df$IncomeVerifiable)
+```
+
+
+```{r waiting_by_credit_group_box}
+ggplot(df, aes(CreditScoreGroup, LoanWaitingDays + 1)) +
+  geom_boxplot(outlier.shape = 1) +
+  scale_y_log10()
+```
+
+As for credit score ranges, again we see the largest number of outliers in the most numerous categories, but the "best" levels are also affected.   
+
+In terms of borrowers' characteristic I'd say that the highest number of outliers can be observed in the categories that were the most frequently seen in time sections where the most listings with longest waiting periods occurred. This may be speaking in favor of other factors mentioned above: the website relaunch, the difficulties of finding investors in the situation of ecomonic recession or some others.  
+
+##### Terms
+
+The loans in the data set have the terms of either 1 year, 3 years or 5 years, 3-year loans being the most frequent. However, they have differ noticeably in average loan amounts or average borrowers' rates.  
+
+```{r monthly_payment_and_rates_by_term}
+p1 <- ggplot(df, aes(Term, LoanOriginalAmount)) +
+  geom_boxplot()
+
+p2 <- ggplot(df, aes(Term, BorrowerRate)) +
+  geom_boxplot()
+
+grid.arrange(p1, p2, ncol = 2)
+```
+
+These differences may also affect the distribution of other variables if used as an additional dimension. It will be explored further in the Multivariate Plots Section.  
+
+#### Loan original amounts
+
+```{r loan_start_vs_amount_scatter}
+ggplot(df, aes(ListingCreationDate, LoanOriginalAmount)) +
+  geom_point(alpha = 0.02, position = 'jitter') 
+```
+
+On the scatterplot the popularity of round amounts is clearly visible. Also we can see, that after the beginning of 2013 the acceptable loan amount increased from \$25,000 to \$35,000. The minimum amount was also increased in 2011. Also we can assume that in the period before relauch the loans were usually lower than after the relaunch, but it is more accessible via a boxplot (see below).  
+
+```{r amount_by_year_box}
+ggplot(df, aes(LoanYear, LoanOriginalAmount)) +
+  geom_boxplot(outlier.shape = 1) 
+```
+
+```{r amount_by_category_box}
+cat_df <- df %>% 
+  group_by(ListingCategory) %>% 
+  mutate(n_loans = length(ListingCategory))
+
+ggplot(cat_df, aes(ListingCategory, LoanOriginalAmount)) + 
+  geom_boxplot(aes(alpha = n_loans), fill = 'blue', outlier.shape = 1) +
+  geom_text(aes(label=..count..), y=0, stat='count', size=2) +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1))
+```
+
+Debt consolidation, being the most popular category, also has the widest range of loan amount distribution. Of comparable range are also Business category, Wedding Loans and Baby&Adoption, though the first two have lower medians. Auto and Vacation loans are characterised by comparatively lower loan amounts.  
+
+```{r amount_by_employment_box}
+ggplot(df, aes(EmploymentStatus, LoanOriginalAmount)) +
+  geom_boxplot(outlier.shape = 1) 
+```
+
+Though of employment status "Retired", "Part-time" or "Not employed" have expectantly lower median loan amounts, the difference between "Employed" and "Full-time" may be caused mostly by the usage of the latter in the period when generally lower loans were accepted.  
+
+#### Investors
+
+```{r investors_by_year_box}
+ggplot(df, aes(LoanYear, Investors)) +
+  geom_boxplot(outlier.shape = 1)
+```
+
+The median number of investors per loan grew in 2007-2010, but decreased in 2011, dropping to 1 investor in 2013. The change of the plot type or the scale can give a closer look into the data.  
+
+```{r date_vs_investors_scatter}
+ggplot(df, aes(LoanOriginationDate, Investors)) + 
+  geom_point(alpha = 0.02, position = 'jitter') +
+  scale_y_log10() 
+```
+
+As we can see on the scatterplot, the number of investors per loan was growing from 2006 to 2008, but in the period of 2009-2011 there were almost no loans funded by less than 10 investors. The situation changed in 2012 and further in 2013 where a growing number of loans was funded by only 1 investor.
+
+```{r investors_by_year_box_logscale}
+ggplot(df, aes(LoanYear, Investors)) +
+  geom_boxplot() +
+  scale_y_log10() +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1))
+```
+
+The following tables aimed at exploring the differences between loans funded by 1 investor or more than one.  
+
+##### Loans with 1 investor by listing categories
+
+```{r one_investor_by_category_table}
+one_investor <- subset(df, Investors == 1)
+
+round(100 * table(one_investor$ListingCategory) / nrow(one_investor), 2)
+```
+
+##### Loans with 1 investor by listing categories in 2013
+
+```{r one_investor_by_category_in_2013}
+one_investor_2013 <- subset(df, Investors == 1 & LoanYear == '2013')
+
+round(100 * table(one_investor_2013$ListingCategory) / 
+        nrow(one_investor_2013), 2)
+```
+
+##### Loans with more than 1 investor by listing categories in 2013
+
+```{r many_investors_by_category_in_2013}
+not_one_investor_2013 <- subset(df, !(Investors == 1) & LoanYear == '2013')
+
+round(100 * table(not_one_investor_2013$ListingCategory) / 
+        nrow(not_one_investor_2013), 2)
+```
+
+As can be seen from the tables the loans with 1 investors are even more concentrated on Debt consolidation.  As for correlation between loan amount and the number of investors, for loans with more than 1 investor it becomes stronger than for the whole data set.  
+
+```{r corr_loan_amounts_investors}
+sub <- subset(df, Investors > 1)
+c(paste('All loans: ', round(cor(df$LoanOriginalAmount, df$Investors), 3)), 
+  paste("2+ investors: ", round(cor(sub$LoanOriginalAmount, sub$Investors), 3)))
+```
+
+```{r investors_vs_loan_amount_scatter_lm}
+ggplot(subset(df, Investors > 1), aes(Investors, LoanOriginalAmount)) +
+  geom_point(alpha = 0.01, position ='jitter') +
+  geom_smooth(method = 'lm', color = 'red', linetype = 3) +
+  ggtitle('Loans with more than 1 investor')
+```
+
+```{r rate_vs_investors_scatter}
+ggplot(df, aes(BorrowerRate, Investors)) +
+  geom_point(alpha = 0.005, position = 'jitter') +
+  geom_smooth(method = 'lm', linetype = 3) 
+```
+
+```{r rate_vs_investors_corr}
+cor(df$BorrowerRate, df$Investors)
+```
+
+It seems that the lower rates correspond to higher number of inverstors. It may feel slightly counter-intuitive, for the higher rates mean higher lender yield, yet higher rates are more often associated with higher risks involved. We can check for more details in the multivariate analysis. Also we can exclude the loans with one investor, for they are specific for only most recent period and check the correlation again.  
+
+```{r}
+sub <- subset(df, Investors > 1)
+cor(sub$BorrowerRate, sub$Investors)
+```
+
+The relationships seems to be stronger for the loans where more than one investor is involved.  
+
+```{r investors_by_term_box}
+ggplot(df, aes(Term, Investors)) +
+  geom_boxplot() +
+  scale_y_log10()
+```
+
+As for terms, the distributions are also affected by the growing number of loans with single investors in 2012-2013. If these loans are excluded, we can see, that the longer terms on average tend to attract slightly more investors (supposedly by the larger amount of loans asked by borrowers).  
+
+```{r many_investors_by_term_box}
+ggplot(subset(df, Investors > 1), aes(Term, Investors)) +
+  geom_boxplot() +
+  scale_y_log10()
+```
+
+#### Credit Score groups
+  
+Credit score is considered one of the most important characteristics in US banking system, being a compound indicator of a person's financial behavior and responsibility.   
+We can estimate how the Prosper's preferences about the acceptable credit score changes over time. From the visualisation below we can see that in 2009 the company seized to accept the listings with the credit score worse than "Fair". Also after the relaunch the most frequent range has changed from "Fair" to "Good", which may mean that of potential borrowers the company start choosing more reliable, especially in the first years after relaunch.  
+
+```{r credit_group_vs_loan_start_freq_poly}
+ggplot(subset(df, !is.na(CreditScoreGroup)), aes(LoanOriginationDate)) +
+  geom_freqpoly(aes(color = CreditScoreGroup), bins=50) +
+  scale_color_brewer(palette = 'Spectral')
+```
+
+As can be seen from the chart below, the proportion of borrowers with "excellent" credit score was the highest in 2009-2010, in comparison with other years (for the listings of 2005 the information about borrowers' credit scores is not available).  
+
+```{r year_by_credit_group_prop}
+ggplot(data = subset(df, !is.na(CreditScoreGroup)), 
+       aes(LoanYear, fill = CreditScoreGroup)) +
+  geom_bar(position = 'fill') +
+  scale_y_continuous(labels = percent_format())+
+  theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
+  scale_fill_brewer(palette = "Spectral")
+```
+
+```{r rate_by_credit_group_box}
+ggplot(df, aes(CreditScoreGroup, BorrowerRate)) +
+  geom_boxplot(outlier.shape = 1)
+```
+
+As for borrower's rates, the better the credit score, the lower is the interest the borrower can expect to pay.
+
+```{r monthly_income_by_credit_group_box}
+ggplot(df, aes(CreditScoreGroup, StatedMonthlyIncome)) +
+  geom_boxplot(outlier.shape = 1, na.rm = TRUE) +
+  scale_y_continuous(limits = c(0, quantile(df$StatedMonthlyIncome, 0.99)))
+```
+
+As for reported monthly income (on the plot above), the borrowers' with better credit score on average tend to have higher income (top 1% is excluded from the plot for better representation of most frequent values). This may be one of the reason, that they are on average approved for higher loan amounts (see the chart below).
+
+```{r amount_by_credit_group_box}
+ggplot(df, aes(CreditScoreGroup, LoanOriginalAmount)) +
+  geom_boxplot(outlier.shape = 1, na.rm = TRUE)
+```
+
+
+# Bivariate Analysis
+
+### Talk about some of the relationships you observed in this part of the \
+investigation. How did the feature(s) of interest vary with other features in \
+the dataset?
+
+The bivarite data exploration has shown that the company's performance over time has gone through a set of stages, each of which having its specific characteristics in the variables:  
+- the early period from 2005 till the company's website relaunch in the middle of 2009, with the growing number of listing and investors, but a lot of undetailed information on borrowers in the earliest years (with a number of borrowers with low credit score) and a relatively high proportion of loans that resulted later in defaulted and charged-off status;  
+- the recovery stage from 2009 till 2011 that was characterised by lower number of new listings and loan amounts, the completion of 3-year loans of the first stage, the higher proportion of borrowers with _very good_ and  _excellent_ credit scores and the exclusion of credit ratings worse than _fair_;  
+- the growth stage from 2011 with dynamic increase of new listings and the number of investors per loan, the proporiton of borrowers with good and fair credit score also grew. In 2012-2013 the new type of investors might have been attracted, who were able to solely fund a loan. Also after the 1-year and 5-year loans were introduced in 2011 the necessity arose of adding one more dimention to the analysis, because the loans differ by term in average loan amounts, rates and number of investors.  
+
+### Did you observe any interesting relationships between the other features \
+(not the main feature(s) of interest)?   
+
+Exploring the borrowers' characteristic I found that the credit score appear to be a reasonable reflection of a person's financial well-being and behavoir, for it corresponds to the higher monthly income and higher proportion of completed loans in comparison with defaulted and charged-off loans, therefore the borrowers with higher credit score may expect to be approved for greater loan amounts with lower interest rates.  
+
+### What was the strongest relationship you found?
+
+The strongest relationship was found between listing creation date and loan origination date, so if you are going to apply for a loan at Prosper you can expect the origination of the loan within 14 days in case of approval (or even earlier).  
+The other strong relationship is between the listing creation date and the loans' closing date, which is determined first of all by the term of the loans. The introduction of 1-year loans caused some distortion to the model line, but for 3-years loans we may expect the closing date to come within the last a year and a half of the term. The first half of the second year seems to be crucial for the loan status of a  3-year loan: if it wasn't defaulted or charged-off in this period, it is more likely to be completed.  
+There is also a moderate negative relationship between borrowers' rates (which is equal to lenders' yield minus fees) and number of investors, especially for the loans with more than 1 investor. Also the lower rates positively correlate with higher credit scores, which may be the reason the lenders found these listings more attractive.  
+
+
+# Multivariate Plots Section
+
+##### Closed loans by status and terms
+
+The following two plots are made to confirm the assumptions made in [Closed Loans](#closed_loans) section above. On the first one we can see the number of defaulted loans during 2006-2007 and the dynamics of charged-off loans - rather high density in 2006-2009 and - after several years of rather scarce occurrence - the growing density in 2011-2014.  
+
+```{r loan_date_vs_closed_dates_by_status_scatter}
+ggplot(subset(df, !is.na(ClosedDate)), aes(LoanOriginationDate, ClosedDate)) +
+  geom_point(alpha = 0.02, position = 'jitter', aes(color = LoanStatus)) +
+  scale_color_brewer(palette = 'Spectral') +
+  guides(color = guide_legend(override.aes = list(alpha=1)))
+```
+
+The second plot confirms the assumption about the loan terms: the upper straight line refers to 3-year loans, the lower straight line, which begins in 2011, refers to 1-year loans. The number of closed 5-year loans appeared in 2012-2014 with no trend for most of such loans still have a few years before the end of the term.  
+
+```{r loan_date_vs_closed_dates_by_term_scatter}
+ggplot(subset(df, !is.na(ClosedDate)), aes(LoanOriginationDate, ClosedDate)) +
+  geom_point(alpha = 0.02, position = 'jitter', aes(color = Term)) +
+  scale_color_brewer(palette = 'Set1') +
+  guides(color = guide_legend(override.aes = list(alpha=1)))
+```
+
+Adding a trend line to each term separately, we can see, that for 1-year loan the closing date may be expected slightly earlier but still close to the end of the term, while for 3-year loans the closing date may be expected at about 1.5-2 years from the origination of the loan. However, the data on closed loans for most recent periods distort the model because of many loans that are still in progress. So, any modelling for 5-year loans are not quite reasonable.
+
+```{r loan_date_vs_closed_dates_facet_term_scatter_lm, fig.height=4}
+ggplot(subset(df, !is.na(ClosedDate)), aes(LoanOriginationDate, ClosedDate)) +
+  geom_point(alpha = 0.02, position = 'jitter') +
+  geom_smooth(method = 'lm', linetype = 3) +
+  facet_wrap(~ Term)
+```
+
+It may be useful to truncate the period for 3-year loans to get a more accurate model, also taking into account the loan status.
+
+```{r loan_date_vs_closed_dates_5year_term_scatter_lm}
+ggplot(subset(df, !is.na(ClosedDate) & (Term == '36') 
+              & (LoanOriginationDate < "2011-01-01")), 
+       aes(LoanOriginationDate, ClosedDate, color = LoanStatus)) +
+  geom_point(alpha = 0.02, position = 'jitter') +
+  geom_smooth(method = 'lm', linetype = 2) +
+  scale_color_brewer(palette = 'Spectral') +
+  guides(color = guide_legend(override.aes = list(alpha=1)))
+```
+
+Here we can see, that the trend line on the plot for all 3-year loans was a compomose between a higher line of completed loans and the lower lines of defaulted and charged-off loans.
+
+##### Median loan amount by credit groups over time
+
+```{r date_vs_amount_by_credit_group_line_median}
+ggplot(aes(x = year(LoanOriginationDate), y = LoanOriginalAmount),
+       data = subset(df, !is.na(CreditScoreGroup))) +
+  geom_line(aes(color = CreditScoreGroup), stat = 'summary', fun.y = median) +
+  scale_color_brewer(palette = 'Spectral')
+```
+
+The borrowers with the _excellent_ credit were the only category who underwent olny slight decrease of the average loan amount in 2008-2010, while _good_ and lower experienced a more noticeable slope from 2007 to 2009, followed by _very good_ category in 2008.
+
+##### Average borrower rates by credit groups over time
+
+```{r date_vs_rate_by_credit_group_line_mean}
+ggplot(aes(x = year(LoanOriginationDate), y = BorrowerRate),
+       data = subset(df, !is.na(CreditScoreGroup))) +
+  geom_line(aes(color = CreditScoreGroup), stat = 'summary', fun.y = mean) +
+  scale_color_brewer(palette = 'Spectral')
+```
+
+Comparing the average borrower rates for different credit groups over time, we can state that the rates also would change: they grew for all groups in 2007-2008, then jumped higher for _good_ and _fair_ credit groups in comparison with _very good_ and _excellent_. The increase stopped from 2011, and the rates started to decrease (for _fair_ group - from 2010), getting back to the numbers of 2006.
+
+##### Borrower rates by credit groups and terms
+
+```{r credit_group_by_rate_facet_term_box}
+ggplot(subset(df, !is.na(CreditScoreGroup)), 
+       aes(CreditScoreGroup, BorrowerRate, fill = CreditScoreGroup)) +
+  geom_boxplot(outlier.shape = 1) +
+  facet_wrap(~ Term) +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
+  scale_fill_brewer(palette = 'Spectral')
+```
+
+As we can see from the chart above, better credit ratings tend to result in lower interest rates. The longer terms will result in higher rates for most credit score groups on average, though the variablity of the distribution is higher for _fair_ and _good_ groups for 3-year loans (though it may be the result of fluctuation in rates in 2009-2011). 
+
+##### Credit score, monthly income and loan amount 
+
+```{r monthly_income_vs_credit_score_by_monthly_payment_scatter}
+ggplot(subset(df, CreditScoreRangeLower > 0), 
+       aes(CreditScoreRangeLower, StatedMonthlyIncome, 
+           color = LoanOriginalAmount)) +
+  geom_point(alpha = 0.01, position = 'jitter', na.rm = TRUE) +
+  scale_y_continuous(limits = c(0, quantile(df$StatedMonthlyIncome, 0.99))) +
+  scale_color_gradientn(colors = rainbow(8)) 
+```
+
+Here we can see, that the listing are clustered by loan amount depending on the monthly income and credit score of the borrowers: the higher the credit score and income, the greater the loan amount that may be approved, though the relationship is rather non-linear. The similar clasterisation can be seen, if we change credit score to debt-to-income ratio.
+
+```{r dti_ratio_vs_monthly_income_by_amount_scatter}
+ggplot(subset(df, DebtToIncomeRatio < 1), 
+       aes(DebtToIncomeRatio, StatedMonthlyIncome, 
+           color = LoanOriginalAmount)) +
+  geom_point(alpha = 0.01, position = 'jitter', na.rm = TRUE) +
+  scale_y_continuous(limits = c(0, quantile(df$StatedMonthlyIncome, 0.99))) +
+  scale_color_gradientn(colors = rainbow(8)) 
+```
+
+The best combination for the loan amount of about \$10,000-15000 seems to be the debt-to-income ratio of about 0.25-0. and monthly income close to \$5,000. Higher income may result in greater amount, while lower income may be bound to lower amounts, no matter the ratio.
+
+##### Investors by term and year
+
+```{r investors_by_year_facet_term_box}
+ggplot(subset(df, !(LoanYear %in% c('2005', '2014'))), 
+       aes(LoanYear, Investors + 1, fill = LoanYear)) +
+  geom_boxplot() +
+  scale_y_log10() +
+  facet_wrap(~ Term) +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
+  scale_fill_brewer(palette = 'Spectral') 
+```
+
+The plot above shows the difference in number of investior depending on the terms of loans. The 3-year and 5-year loans underwent the decrease in median number of investors in 2011-2012 with a drop in 2013. I would expect it to be related with the company efforts for establishing the audience of reliable borrowers in the prior two years. Another possible factor may be the overall improvement of economic situation and the appearence of investors on Prosper, who were not only willing to invest, but also capable of funding solely a relatively large amount of loans. The 1-year loans didn't show the same trends, so these investors might have been be interested predominantly in longer terms. The other reason might have been the fact that 1-year loans were only accepted in the beginning of 2013, so the distribution is not describing the whole year.
+
+##### Number of investors per loan by loan original amount over time 
+
+```{r date_vs_investors_by_amount_scatter}
+ggplot(df, aes(LoanOriginationDate, Investors, color = LoanOriginalAmount)) + 
+  geom_point(alpha = 0.02, position = 'jitter') +
+  scale_y_log10() +
+  scale_color_gradientn(colors = rainbow(10))
+```
+
+The scatterplot above gives more detailed information about the distributions in the previous section. Here we can divide the data into the same three stages as the overall company's performance. We can see, that during the recovery period the loans of lower amounts were funded mostly by higher number of inverstors. The situation changed around 2012, when the greater amounts began to be funded by lower number of investors. The change continued into 2013 when the number of investors appeared who were able to fund alone the loans that before relaunch were usually funded by several hundred people.
+
+##### Rates, investors and loan amount
+
+```{r rate_vs_investors_by_amount_scatter}
+ggplot(subset(df, Investors > 1), 
+       aes(BorrowerRate, Investors, color = LoanOriginalAmount)) +
+  geom_point(alpha = 0.005, position = 'jitter') +
+  geom_smooth(method = 'lm', linetype = 3) +
+  scale_color_gradientn(colors = rainbow(8))
+```
+
+In addition to the relationshop between `BorrowerRate` and the number of investors per loan discovered earlier, the loan amounts provide additional details. The loans with lower interest rates also tend to be of larger amount. This is the reflection of the fact, that lowest rates typically can be obtained mostly by borrowers with better credit ratings, that also tend to have higher income. This makes it more accessible for them to get a loan of greater amount. The higher loan amount in peer-to-peer lending may require a greater number of invertors, because of collective lending and limited funds of each lender involved, but the characteristics of borrowers of such loans make it a reliable investment. The higher amounts are more often seen in 3-year and 5-year loans, so the investment will be also long-term.  
+Also there is a dense number of invertors who are interested in loans with comparatively higher interest rates of about 0.28-0.35, but since the loan amounts with such rates are usually lower, the number of investors involved is also relatively small.
+
+##### Investors, credit score and loan amount over time 
+
+```{r credit_score_vs_investors_by_loan_amount_and_years, fig.height=6}
+ggplot(subset(df, CreditScoreRangeLower > 0), 
+       aes(CreditScoreRangeLower, Investors, color = LoanOriginalAmount)) +
+  geom_point(alpha=0.01, position = 'jitter') +
+  scale_colour_gradientn(colours = rainbow(8)) +
+  facet_wrap(~ LoanYear) 
+```
+
+Adding another dimension of credit score to number of investors per loan, loan amounts and time, we can assume that the characteristics of borrowers is not the only important part in getting a loan. After the relaunch and recession mostly small loan amounts were funded, no matter the credit score (if not excellent). We may assume that it was the consequence not only of the recession, but the statistics of defaulted and charged-off loans, demonstrated by Prosper's borrowers in the earlier years. As time moved forward the wider range of credit score became acceptable for the higher loan amounts.
+
+# Multivariate Analysis
+
+### Talk about some of the relationships you observed in this part of the \
+investigation. Were there features that strengthened each other in terms of \
+looking at your feature(s) of interest?  
+
+The multivariate analysis helped to distinguish the characteristics related to different stages of Prosper's performance over time and to see how they influence each other. Thus, on the earlier stage the growing number of listings and loan amounts was simultaneous with the growing number of investors per loan. Then the recession took place, together with the company's website relauch with changed requirements to the new borrowers after the relatively high proportion of loans in the first stage resulted in defaults and charged-off. This was also the time when the number of investors overall seems to have decreased (either as a result of the poor outcome of earlier loans or of the economic crisis in general, we can't tell). The caution of listings approval and the increase of rates was followed by the growing number of loans (and, apparently investors). We must also mention here the overall improvement of economic situation. 
+
+### Were there any interesting or surprising interactions between features?
+
+One of the most surprising discoveries for me was the negative relation between loan interest rates and the number of investors, but adding the loan amount variable allowed to see this relationship in more detailed way, and I included it in the final section.
+
+------
+
+# Final Plots and Summary
+
+### Plot One
+
+```{r Plot_One}
+ggplot(df, aes(LoanOriginationDate)) +
+  geom_freqpoly(aes(color = LoanStatus), bins = 50) +
+  scale_color_brewer(palette = 'Paired') +
+  ggtitle('Loans Over Time') +
+  xlab('Loan Origination Date') +
+  ylab('Number Of Loans') +
+  labs(color='Loan Status') 
+```
+
+### Description One
+
+This plot describes several aspects of Prospers' loans history at once, as the company went through three stages in its performance during the period in question:   
+- the early period from 2005 till the company's website relaunch in the middle of 2009, with the growing number of listing and investors, but with a relatively high proportion of loans that resulted later in defaulted and charged-off status;  
+- the recovery stage from 2009 till 2011 that was characterised by lower number of new listings together with the growing proportion of completed loans and decreasing share of defaulted and charged-off loans;  
+- the growth stage from 2011 with dynamic increase of new listings and the intoduction of 2 additional terms: 1 year and 5 years, which resulted in higher proportions of loans in progress because of the growing number of 5-year loans.  
+We can also see that thecompany managed to decrease the number of defaulted loans since the earliest stage and that the loans that are past to some extend compose only small share of loans in progress.  
+
+The progress made through the recovery stage correlates with the temporary increase of rates for all credit ratings in 2008-2011 and the exclusion of borrowers with credit ratings below _fair_ starting from 2009. While such measures are reasonable and may be called expectant in the situation of economic recession, in peer-to-peer lending the existance and attracting of investors becomes an important factor of financial processes. That is why I found the behavior of investors the most interesting aspect discovered.
+
+### Plot Two
+
+```{r Plot_Two}
+ggplot(df, aes(LoanOriginationDate, Investors, color = LoanOriginalAmount)) + 
+  geom_point(alpha = 0.02, position = 'jitter') +
+  scale_y_log10() +
+  scale_color_gradientn(colors = rainbow(10)) +
+  ggtitle('Number Of Investors Per Loan Over Time') +
+  xlab('Loan Origination Date') +
+  ylab('Number Of Investors Per Loan') +
+  labs(color='Loan \nOriginal \nAmount, $')
+```
+
+### Description Two
+
+This plot gives us some understanding of the other side in the peer-to-peer landing - the investors. Here we can visually divide the data into the same three stages as the overall company's performance. We can see, that during the recovery period the loans of lower amounts were funded mostly by higher number of inverstors. I would also assume the overall decrease of the number of investors involved. The situation started to change in 2011. Around 2012 the greater loan amounts began to be funded by lower number of investors. Here I would also expect the overall increase in number of investors together with the number of loans. The change continued into 2013 when the number of investors appeared who were able to fund alone the loans that before the recession and the relaunch were usually funded by several hundred investors.
+
+### Plot Three
+
+```{r Plot_Three}
+ggplot(subset(df, Investors > 1), 
+       aes(BorrowerRate, Investors, color = LoanOriginalAmount)) +
+  geom_point(alpha = 0.005, position = 'jitter') +
+  geom_smooth(method = 'lm', linetype = 3) +
+  scale_color_gradientn(colors = rainbow(8)) +
+  ggtitle('Number Of Investors vs Interest Rate') +
+  xlab('Interest Rate For Borrowers') +
+  ylab('Number Of Investors Per Loan (2+)') +
+  labs(color='Loan \nOriginal \nAmount, $')
+```
+
+### Description Three
+For this plot I used `BorrowerRate` on x-axis to visualise the relationship between what the borrowers are expected to pay and what number of inverstors are interested in such loans, since the lenders' yield is based on borrowers' rate minus servicing fees.  
+As can be seen from the plot, there is a negative correlation between the number of investors per loan and the interest rate, paid by borrowers. The loans with lower interest rates also tend to be of larger amount. This is the reflection of the fact, that lowest rates typically can be obtained mostly by borrowers with better credit ratings, who also tend to have higher income and therefore may be approved for higher loan amount. The higher loan amount in peer-to-peer lending may require a greater number of invertors, because there is no single financial institution behind, but the characteristics of borrowers of such loans make it a reliable investment. The higher amounts are more often seen in 3-year and 5-year loans, so the investment will be also long-term.  
+Also there is a dense number of invertors who are interested in loans with comparatively higher interest rates of about 0.28-0.35, but since the loan amounts with such rates are usually lower, the number of investors involved is also relatively small.
+
+------
+
+# Reflection
+
+There are several challenges this data set provides, in my opinion. First of all, the number of variables. Even the limiting of their number for further exploration requires a lot of efforts in distinguishing the most perspective ones. Another challenge comes from the rather long period of data. On the one hand, the data change over time due to different circumstances, which makes the explorations even more interesting, but it also makes, for example, the analysis of averages less meaningfull without time dimension (or less reliable without verification by time dimension). On the other hand, the approach to some variables also change over time, which is especially noticeable in changing levels of the categorical variables. Some of them would require rethinking and relabelling to be used in further analysis. This especially refers to the categorical characteristics of borrowers which may provide more additions to the trends discovered after rearranging the levels to combine those with similar meanings into broader groups.
+My favorite part was working with `ggplot2` for visualisations, I appreciated the versatility it gives after you understand the structure of code used for plotting. My main struggle was to remeber to fit the code into 80 symbol limitation, mostly because of the long names of the variables in the data set. 
+
+
+<script>
+$( "input.hideshow" ).each( function ( index, button ) {
+  button.value = 'Hide Output';
+  $( button ).click( function () {
+    var target = this.nextSibling ? this : this.parentNode;
+    target = target.nextSibling.nextSibling;
+    if ( target.style.display == 'block' || target.style.display == '' ) {
+      target.style.display = 'none';
+      this.value = 'Show Output';
+    } else {
+      target.style.display = 'block';
+      this.value = 'Hide Output';
+    }
+  } );
+} );
+</script>
