@@ -48,4 +48,4 @@ DFND __Tableau__ project can be found [here](https://public.tableau.com/profile/
 [dand-data-wrangling](https://github.com/TianaQ/udacity-bertelsmann-ds-challenge/tree/master/8-dand-data-wrangling)
 > See [WeRateDogs data wrangling project](https://tianaq.github.io/udacity-bertelsmann-ds-challenge/8-dand-data-wrangling/wrangle_act.html)
 
-
+DAND __Tableau__ project can be found [here](https://public.tableau.com/views/ProsperLoansDataVizProject/FinalStory). Project write-up is available [here](https://tianaq.github.io/udacity-bertelsmann-ds-challenge/9-dand-data-storytelling/Tableau_Story.html).
