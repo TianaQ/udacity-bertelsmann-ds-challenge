@@ -1,4 +1,4 @@
-Here are some code and the projects I made during my journey through Udacity & Bertelsmann Data Science Scholarship (work in progress).
+Here are some code and the projects I made during my journey through Udacity & Bertelsmann Data Science Scholarship.
 
 ## Challenge Phase
 
@@ -43,10 +43,13 @@ DFND __Tableau__ project can be found [here](https://public.tableau.com/profile/
 [dand-data-investigation](https://github.com/TianaQ/udacity-bertelsmann-ds-challenge/tree/master/5-dand-data-investigation)
 >See [Maternal mortality data investigation project](https://tianaq.github.io/udacity-bertelsmann-ds-challenge/5-dand-data-investigation/Investigate_a_Dataset.html)
 
-[dand-eda-in-R](https://github.com/TianaQ/udacity-bertelsmann-ds-challenge/tree/master/7-dand-eda-in-r)
+[dand-practical-stats](https://github.com/TianaQ/udacity-bertelsmann-ds-challenge/tree/master/6-dand-practical-stats)
+>See [A/B Testing project](https://github.com/TianaQ/udacity-bertelsmann-ds-challenge/tree/master/6-dand-practical-stats/AB_testing.html) and [Stroop effect analysis](https://github.com/TianaQ/udacity-bertelsmann-ds-challenge/tree/master/6-dand-practical-stats/perceptual_phenomenon.html)
+
+[dand-EDA-in-R](https://github.com/TianaQ/udacity-bertelsmann-ds-challenge/tree/master/7-dand-eda-in-r)
 >See [Prosper loans exploration report](https://tianaq.github.io/udacity-bertelsmann-ds-challenge/7-dand-eda-in-r/prosper_loans.html)
 
 [dand-data-wrangling](https://github.com/TianaQ/udacity-bertelsmann-ds-challenge/tree/master/8-dand-data-wrangling)
-> See [WeRateDogs Data Wrangling Project](https://tianaq.github.io/udacity-bertelsmann-ds-challenge/8-dand-data-wrangling/wrangle_act.html)
+> See [WeRateDogs data wrangling project](https://tianaq.github.io/udacity-bertelsmann-ds-challenge/8-dand-data-wrangling/wrangle_act.html)
 
 
