@@ -1,6 +1,6 @@
-Here are some code and projects I made during my journey through Udacity & Bertelsmann Data Science Scholarship (work in progress).
+Here are some code and the projects I made during my journey through Udacity & Bertelsmann Data Science Scholarship (work in progress).
 
-## Challenge phase
+## Challenge Phase
 
 [r-and-python-in-rmarkdown](https://github.com/TianaQ/udacity-bertelsmann-ds-challenge/tree/master/0-challenge-phase/r-and-python-in-rmarkdown) - an example of combining R and Python in one Rmarkdown document, made for a forum discussion. 
 >See [output in html](https://tianaq.github.io/udacity-bertelsmann-ds-challenge/0-challenge-phase/r-and-python-in-rmarkdown/r_and_python_in_rstudio.html)
@@ -12,9 +12,11 @@ Here are some code and projects I made during my journey through Udacity & Berte
 
 ## Data Foundations Nanodegree
 
-After the challenge phase I was accepted to the full scholarship but due to the sorting process got into Data Foundations Nanodegree. It took me 5 days to finish it so after the graduation I was granted an upgrade to Data Analyst Nanodegree. Here are the topics covered and the projects I made for DFND.
+After the challenge phase I was accepted to the full scholarship but due to the sorting process got into Data Foundations Nanodegree (recently rebranded as [Business Analytics Nanodegree](https://www.udacity.com/course/business-analytics-nanodegree--nd098)). It took me 5 days to finish it so after the graduation I was granted an upgrade to Data Analyst Nanodegree. Here are the topics covered and the projects I made for DFND.
 
-[DFND Syllabus](https://github.com/TianaQ/udacity-bertelsmann-ds-challenge/blob/master/0-challenge-phase/dfnd-syllabus.pdf)
+[DFND Syllabus](https://github.com/TianaQ/udacity-bertelsmann-ds-challenge/blob/master/0-challenge-phase/dfnd-syllabus.pdf)   
+
+[DFND Certificate](https://confirm.udacity.com/LKPNGKYZ)
 
 [dfnd-descriptive-stats](https://github.com/TianaQ/udacity-bertelsmann-ds-challenge/tree/master/1-dfnd-descriptive-stats) - the project required using __spreadsheets__ to practice __descriptive statistics__ and analyse Udacity students survey data. 
 >See [Survey analysis report](https://github.com/TianaQ/udacity-bertelsmann-ds-challenge/blob/master/1-dfnd-descriptive-stats/survey__presentation.pdf)
@@ -24,9 +26,13 @@ After the challenge phase I was accepted to the full scholarship but due to the 
 
 DFND __Tableau__ project can be found [here](https://public.tableau.com/profile/tatiana.kurilo#!/vizhome/RegionalDifferencesinUSA/RegionalDifferencesintheUSA). The project uses the data of US Census 2015 to visualise regional differences in the United States in terms of population, income, labor markets, commute time, etc.
 
-## Data Analyst Nanodegree (work in progress)
 
-[DAND Syllabus](https://github.com/TianaQ/udacity-bertelsmann-ds-challenge/blob/master/0-challenge-phase/dand-syllabus-v7.pdf)
+
+## Data Analyst Nanodegree
+
+[DAND Syllabus](https://github.com/TianaQ/udacity-bertelsmann-ds-challenge/blob/master/0-challenge-phase/dand-syllabus-v7.pdf)   
+
+[DAND Certificate](https://confirm.udacity.com/59GCM2E6)
 
 [dand-sql](https://github.com/TianaQ/udacity-bertelsmann-ds-challenge/tree/master/3-dand-sql) - the project required applying SQL to obtain data for chosen cities from the database of averade temperatures in student workspace as .csv files, and describing the trends. I recreated the database locally for selected data to conduct EDA in R and produce the report using RMarkdown.
 >See [Weather trends report](https://tianaq.github.io/udacity-bertelsmann-ds-challenge/3-dand-sql/weather_trends.html)
@@ -40,5 +46,7 @@ DFND __Tableau__ project can be found [here](https://public.tableau.com/profile/
 [dand-eda-in-R](https://github.com/TianaQ/udacity-bertelsmann-ds-challenge/tree/master/7-dand-eda-in-r)
 >See [Prosper loans exploration report](https://tianaq.github.io/udacity-bertelsmann-ds-challenge/7-dand-eda-in-r/prosper_loans.html)
 
+[dand-data-wrangling](https://github.com/TianaQ/udacity-bertelsmann-ds-challenge/tree/master/8-dand-data-wrangling)
+> See [WeRateDogs Data Wrangling Project](https://tianaq.github.io/udacity-bertelsmann-ds-challenge/8-dand-data-wrangling/wrangle_act.html)
 
-To be continued
+

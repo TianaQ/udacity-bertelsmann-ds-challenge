@@ -1,0 +1,171 @@
+---
+title: "Data Wrangling Project: Act Report"
+output: html_document
+---
+
+#### _by Tatiana Kurilo_  
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE, warning = FALSE, message = FALSE)
+```
+
+```{r packages}
+library(ggplot2)
+library(gridExtra)
+library(dplyr)
+library(lubridate)
+```
+
+
+```{r load_data}
+df <- read.csv('twitter_archive_master.csv')
+```
+
+```{r time_type_coppection}
+df$timestamp <-ymd_hms(df$timestamp)
+```
+
+### WeRateDogs Twitter Data Analysis
+
+Do you like dogs? Many people do. What dogs do they like best? WeRateDogs is a Twitter account where dogs can get some ratings, lots of likes and a larger audience of admirers thanks to retweets.  
+
+Here we have data of `r nrow(df)` tweets by \@[dog_rates](https://twitter.com/dog_rates) with the ratings, number of favorites and retweets and some additional information. If you want to check the conclusions in this post or reproduce the analysis yourselt, please, refer to this [Jupyter Notebook](wrange_act.ipynb).
+
+The data include tweets from `r toString(month(min(df$timestamp), label = TRUE, abbr = FALSE))`, `r day(min(df$timestamp))`, `r year(min(df$timestamp))` to `r toString(month(max(df$timestamp), label = TRUE, abbr = FALSE))`, `r day(max(df$timestamp))`, `r year(max(df$timestamp))`. Let's see, how did WeRateDogs do during this period of time.
+
+```{r tweets_over_time}
+ggplot(df, aes(timestamp)) +
+  geom_histogram(color = 'black', fill = '#77ee77', bins = 100) +
+  ggtitle('Tweets Over Time') +
+  xlab('Time') +
+  ylab('Count')
+```
+
+As can be seen from the plot above, WeRateDogs took a lot of effort to promote the account, posting quite frequently during the first months. We can see if it paid off with mean retweet and favorite counts per month.
+
+```{r}
+df$MonthYear <- format(df$timestamp, "%Y-%m")
+```
+
+```{r}
+df.by_month_year <- df %>%
+  group_by(MonthYear) %>%
+  summarise(fav_mean = mean(favorite_count),
+            retweet_mean = median(retweet_count),
+            n = n()) %>%
+  arrange(MonthYear)
+```
+
+```{r averages, fig.height=6}
+
+p1 <- ggplot(df.by_month_year, aes(MonthYear, fav_mean)) +
+  geom_line(aes(group = 1), color = '#ee7777') +
+  ggtitle('Average Number Of Favorites Over Time') +
+  xlab('Time') +
+  ylab('Avg. Number of Favorites') +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1))
+  
+p2 <- ggplot(df.by_month_year, aes(MonthYear, retweet_mean)) +
+  geom_line(aes(group = 1), color = '#7777ee') +
+  ggtitle('Average Number Of Retweets Over Time') +
+  xlab('Time') +
+  ylab('Avg. Number of Retweets') +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1))
+
+grid.arrange(p1, p2, ncol = 1)
+```
+
+And sure, it did!  
+
+#### Favorites And Retweets
+
+So. Let's say, you have a dog and you think it is the best dog ever. How many of WeRateDogs' readers will support your opinion, on average?  
+The average number of favorites per tweet is `r round(mean(df$favorite_count), 1)`, the median is `r median(df$favorite_count)`, for retweets the numbers are `r round(mean(df$retweet_count), 1)`, the median is `r median(df$retweet_count)`, respectively.  Such noticeable differences between two measures of centes tell us that the distiributions of number of favorites and retweets are rather skewed. See the green line for medians and orange one for means in the plots below.
+
+```{r}
+p1 <- ggplot(df, aes(favorite_count)) +
+  geom_histogram(color = 'black', fill = '#ee7777', bins = 100) +
+  scale_x_continuous(limits = c(0, quantile(df$favorite_count, 0.99))) +
+  geom_vline(xintercept = median(df$favorite_count), 
+             linetype=2, color = "green") +
+  geom_vline(xintercept = mean(df$favorite_count), 
+             linetype=2, color = "orange") + 
+  ggtitle(expression(atop("Favorites Per Tweet", atop(italic("top 1% omitted"), "")))) +
+  xlab('Number Of Favorites') +
+  ylab('Count') 
+  
+p2 <- ggplot(df, aes(retweet_count)) +
+  geom_histogram(color = 'black', fill = '#7777ee', bins = 100) +
+  scale_x_continuous(limits = c(0, quantile(df$retweet_count, 0.99)))  +
+  geom_vline(xintercept = median(df$retweet_count), 
+             linetype=2, color = "green") +
+  geom_vline(xintercept = mean(df$retweet_count), 
+             linetype=2, color = "orange") +
+  ggtitle(expression(atop("Retweets Per Tweet", atop(italic("top 1% omitted"), "")))) +
+  xlab('Number Of Retweets') +
+  ylab('Count') 
+
+grid.arrange(p1, p2, ncol = 2)
+```
+
+It looks like if your dog gets posted on \@[dog_rates](https://twitter.com/dog_rates), you can expect to have your several hundreds of likes, at least. But what about thousands? Here is where ratings come into play.
+
+#### Ratings 
+
+The rating system on \@[dog_rates](https://twitter.com/dog_rates) allows a dog to get any number out of ten and often some points more, like 12/10. For the purpose of the analysis the numbers were actually devided, so 12/10 is equal to 1.2 in plots.
+
+```{r}
+ggplot(df, aes(rating)) +
+  geom_histogram(bins = 30, color = 'black', fill = '#77ee77') +
+  ggtitle('Ratings on WeRateDogs') +
+  xlab('Rating') +
+  ylab('Count')
+```
+
+It is quite common for a dog to get over 10 out of 10 at \@[dog_rates](https://twitter.com/dog_rates), the median rating is `r median(df$rating)`, or `r median(df$rating) * 10`/10. Let's check, who gets more favorites and retweets.
+
+```{r,  fig.height=6}
+p1 <- ggplot(df, aes(rating, favorite_count)) +
+  geom_point(alpha = 0.1) +
+  scale_y_continuous(limits = c(0, quantile(df$favorite_count, 0.99))) +
+  ggtitle('Ratings vs Favorites') +
+  xlab('Ratings') +
+  ylab('Favorites')
+
+p2 <- ggplot(df, aes(rating, retweet_count)) +
+  geom_point(alpha = 0.1) +
+  scale_y_continuous(limits = c(0, quantile(df$retweet_count, 0.99))) +
+  ggtitle('Ratings vs Retweets') +
+  xlab('Ratings') +
+  ylab('Retweets')
+
+grid.arrange(p1, p2, ncol = 1)
+```
+
+```{r}
+medians <- tapply(df$favorite_count, factor(df$rating), median)
+```
+
+It looks like 10/10 is not enogh to get beyond 10k favorites, but with 13 out of 10 the perspectives are much better: the median number of favorites for 10/10 is `r medians[12]`, while for 13/10 it is `r format(medians[16], scientific=FALSE)`.
+
+Let's stop on this and see, who is the most favorited dog on \@[dog_rates](https://twitter.com/dog_rates). At least according to the data we have.
+
+```{r}
+top_dog_index = which.max(df$favorite_count)
+
+td_row <- df[top_dog_index, ] 
+```
+
+> `r toString(td_row$text)`  
+>  
+> Favorites: `r toString(td_row$favorite_count)`  
+> Retweets: `r toString(td_row$retweet_count)`  
+>   
+> ![](`r toString(td_row$jpg_url)`)
+
+It is actually a video. And, maybe, you should [take a look](https://twitter.com/dog_rates/status/744234799360020481/video/1) too. Have fun!
+
+
+
+
+
