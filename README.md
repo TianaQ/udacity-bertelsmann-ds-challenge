@@ -1,4 +1,4 @@
-Here are some code and the projects I made during my journey through Udacity & Bertelsmann Data Science Scholarship.
+Here are some code and the projects I made during my journey through [Udacity & Bertelsmann Data Science Scholarship](https://www.udacity.com/bertelsmann-data-scholarships). 
 
 ## Challenge Phase
 
@@ -40,8 +40,8 @@ DFND __Tableau__ project can be found [here](https://public.tableau.com/profile/
 [dand-data-investigation](https://github.com/TianaQ/udacity-bertelsmann-ds-challenge/tree/master/5-dand-data-investigation) - the project required applying the methods of __exploratory data analysis__ to the chosen data from [Gapminder.org](https://www.gapminder.org/), using __Python libraries__ - `pandas`, `numpy` and `matplotlib`. 
 >See [Maternal mortality data investigation project](https://tianaq.github.io/udacity-bertelsmann-ds-challenge/5-dand-data-investigation/Investigate_a_Dataset.html)
 
-[dand-practical-stats](https://github.com/TianaQ/udacity-bertelsmann-ds-challenge/tree/master/6-dand-practical-stats)
->See [A/B Testing project](https://tianaq.github.io/udacity-bertelsmann-ds-challenge/6-dand-practical-stats/AB_testing.html) and [Stroop effect analysis](https://tianaq.github.io/udacity-bertelsmann-ds-challenge/6-dand-practical-stats/perceptual_phenomenon.html)
+[dand-practical-stats](https://github.com/TianaQ/udacity-bertelsmann-ds-challenge/tree/master/6-dand-practical-stats) - the program included two projects which required __statistics__ methods applications for __hypothesis testing__, the project structure was pre-set in both cases.
+>See [A/B testing project](https://tianaq.github.io/udacity-bertelsmann-ds-challenge/6-dand-practical-stats/AB_testing.html) and [Stroop effect analysis](https://tianaq.github.io/udacity-bertelsmann-ds-challenge/6-dand-practical-stats/perceptual_phenomenon.html)
 
 [dand-EDA-in-R](https://github.com/TianaQ/udacity-bertelsmann-ds-challenge/tree/master/7-dand-eda-in-r) - the project required performing exploratory data analysis on a chosen data set, using __R__ programming language. Data visualisations are created with `ggplot2` library.
 >See [Prosper loans exploration report](https://tianaq.github.io/udacity-bertelsmann-ds-challenge/7-dand-eda-in-r/prosper_loans.html)
