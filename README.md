@@ -2,7 +2,7 @@ Here are some code and the projects I made during my journey through [Udacity & 
 
 ## Challenge Phase
 
-[r-and-python-in-rmarkdown](https://github.com/TianaQ/udacity-bertelsmann-ds-challenge/tree/master/0-challenge-phase/r-and-python-in-rmarkdown) - an example of combining R and Python in one Rmarkdown document, made for a forum discussion. 
+[r-and-python-in-rmarkdown](https://github.com/TianaQ/udacity-bertelsmann-ds-challenge/tree/master/0-challenge-phase/r-and-python-in-rmarkdown) - an example of combining R and Python in one R Markdown document, made for a forum discussion. 
 >See [output in html](https://tianaq.github.io/udacity-bertelsmann-ds-challenge/0-challenge-phase/r-and-python-in-rmarkdown/r_and_python_in_rstudio.html)
 
 [ubdsc-group-projects](https://github.com/TianaQ/ubdsc-group-projects) - files and scripts created for group project activities. Some exploration analysis was conducted on Boston fires data. The analysis of marketing freelancers offering their services online was submitted as a group project.
@@ -21,7 +21,7 @@ After the challenge phase I was accepted to the full scholarship but due to the 
 >See [Survey analysis report](https://github.com/TianaQ/udacity-bertelsmann-ds-challenge/blob/master/1-dfnd-descriptive-stats/survey__presentation.pdf)
 <br>
 
-[dfnd-sql](https://github.com/TianaQ/udacity-bertelsmann-ds-challenge/tree/master/2-dfnd-sql) - the project required applying __SQL__ to explore data in Chinook sample database. I used RMarkdown and R to combine queries with data exploration, the output included in the final presentation can be seen [here](https://tianaq.github.io/udacity-bertelsmann-ds-challenge/2-dfnd-sql/project_sql_output.html).
+[dfnd-sql](https://github.com/TianaQ/udacity-bertelsmann-ds-challenge/tree/master/2-dfnd-sql) - the project required applying __SQL__ to explore data in Chinook sample database. I used R Markdown and R to combine queries with data exploration, the output included in the final presentation can be seen [here](https://tianaq.github.io/udacity-bertelsmann-ds-challenge/2-dfnd-sql/project_sql_output.html).
 >See [Music SQL database analysis report](https://github.com/TianaQ/udacity-bertelsmann-ds-challenge/blob/master/2-dfnd-sql/Music%20SQL%20Database%20Analysis.pdf)
 <br>
 
@@ -49,7 +49,7 @@ DFND __Tableau__ project can be found [here](https://public.tableau.com/profile/
 >See [A/B testing project](https://tianaq.github.io/udacity-bertelsmann-ds-challenge/6-dand-practical-stats/AB_testing.html) and [Stroop effect analysis](https://tianaq.github.io/udacity-bertelsmann-ds-challenge/6-dand-practical-stats/perceptual_phenomenon.html)
 <br>
 
-[dand-EDA-in-R](https://github.com/TianaQ/udacity-bertelsmann-ds-challenge/tree/master/7-dand-eda-in-r) - the project required performing exploratory data analysis on a chosen data set, using __R__ programming language. Data visualisations are created with `ggplot2` library.
+[dand-EDA-in-R](https://github.com/TianaQ/udacity-bertelsmann-ds-challenge/tree/master/7-dand-eda-in-r) - the project required performing exploratory data analysis on a chosen data set, using __R__ and __R Markdown__. Data visualisations are created with `ggplot2` library.
 >See [Prosper loans exploration report](https://tianaq.github.io/udacity-bertelsmann-ds-challenge/7-dand-eda-in-r/prosper_loans.html)
 <br>
 
