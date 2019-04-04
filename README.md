@@ -31,22 +31,22 @@ DFND __Tableau__ project can be found [here](https://public.tableau.com/profile/
 
 [DAND Syllabus](https://github.com/TianaQ/udacity-bertelsmann-ds-challenge/blob/master/0-challenge-phase/dand-syllabus-v7.pdf) | [DAND Certificate](https://confirm.udacity.com/59GCM2E6)
 
-[dand-sql](https://github.com/TianaQ/udacity-bertelsmann-ds-challenge/tree/master/3-dand-sql) - the project required applying __SQL__ to obtain data for chosen cities from the database of averade temperatures in student workspace as .csv files, and describing the trends. I recreated the database locally for selected data to conduct EDA in R and produce the report using RMarkdown.
+[dand-sql](https://github.com/TianaQ/udacity-bertelsmann-ds-challenge/tree/master/3-dand-sql) - the project required applying __SQL__ to obtain data for chosen cities from the database of average temperatures in the student workspace as .csv files, and describing the trends. I recreated the database locally for selected data to conduct EDA in R and produce the report using RMarkdown.
 >See [Weather trends report](https://tianaq.github.io/udacity-bertelsmann-ds-challenge/3-dand-sql/weather_trends.html)
 
 [dand-intro-to-python](https://github.com/TianaQ/udacity-bertelsmann-ds-challenge/tree/master/4-dand-intro-to-python) - the project required to investigate US Bikeshare data using __Python basics__: lists, dictionaries, sets, writing functions, using libraries, etc.
 >See [US Bikeshare data analysis](https://tianaq.github.io/udacity-bertelsmann-ds-challenge/4-dand-intro-to-python/Bike_Share_Analysis.html)
 
-[dand-data-investigation](https://github.com/TianaQ/udacity-bertelsmann-ds-challenge/tree/master/5-dand-data-investigation) - the project required applying the methods of exploratory data analysis to some data from [Gapminder.org](https://www.gapminder.org/), using Python libraries - `pandas`, `numpy` and `matplotlib`. 
+[dand-data-investigation](https://github.com/TianaQ/udacity-bertelsmann-ds-challenge/tree/master/5-dand-data-investigation) - the project required applying the methods of __exploratory data analysis__ to the chosen data from [Gapminder.org](https://www.gapminder.org/), using __Python libraries__ - `pandas`, `numpy` and `matplotlib`. 
 >See [Maternal mortality data investigation project](https://tianaq.github.io/udacity-bertelsmann-ds-challenge/5-dand-data-investigation/Investigate_a_Dataset.html)
 
 [dand-practical-stats](https://github.com/TianaQ/udacity-bertelsmann-ds-challenge/tree/master/6-dand-practical-stats)
 >See [A/B Testing project](https://tianaq.github.io/udacity-bertelsmann-ds-challenge/6-dand-practical-stats/AB_testing.html) and [Stroop effect analysis](https://tianaq.github.io/udacity-bertelsmann-ds-challenge/6-dand-practical-stats/perceptual_phenomenon.html)
 
-[dand-EDA-in-R](https://github.com/TianaQ/udacity-bertelsmann-ds-challenge/tree/master/7-dand-eda-in-r) - the project required conducting exploratory data analysis on a chosen data set, using __R__ programming language. Data visualisations are created with `ggplot2` library.
+[dand-EDA-in-R](https://github.com/TianaQ/udacity-bertelsmann-ds-challenge/tree/master/7-dand-eda-in-r) - the project required performing exploratory data analysis on a chosen data set, using __R__ programming language. Data visualisations are created with `ggplot2` library.
 >See [Prosper loans exploration report](https://tianaq.github.io/udacity-bertelsmann-ds-challenge/7-dand-eda-in-r/prosper_loans.html)
 
-[dand-data-wrangling](https://github.com/TianaQ/udacity-bertelsmann-ds-challenge/tree/master/8-dand-data-wrangling)
+[dand-data-wrangling](https://github.com/TianaQ/udacity-bertelsmann-ds-challenge/tree/master/8-dand-data-wrangling) - the project required applying the methods of __data gathering, assessing and cleaning__ to the data from [@dog_rates](https://twitter.com/dog_rates) Twitter account, using __Python__, and performing exploratory data analysis on the cleaned data. 
 > See [WeRateDogs data wrangling project](https://tianaq.github.io/udacity-bertelsmann-ds-challenge/8-dand-data-wrangling/wrangle_act.html)
 
 DAND __Tableau__ project can be found [here](https://public.tableau.com/views/ProsperLoansDataVizProject/FinalStory). It is based on exploratory analysis of Prosper's loans data, which was the project for EDA in R course (see above). Tableau project write-up is available [here](https://tianaq.github.io/udacity-bertelsmann-ds-challenge/9-dand-data-storytelling/Tableau_Story.html).
