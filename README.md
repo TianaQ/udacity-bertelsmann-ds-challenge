@@ -1,4 +1,4 @@
-Here are some code and the projects I made during my journey through [Udacity & Bertelsmann Data Science Scholarship](https://www.udacity.com/bertelsmann-data-scholarships). 
+Here are some code and the projects I made during my journey through [Udacity & Bertelsmann Data Science Scholarship](https://www.udacity.com/bertelsmann-data-scholarships) 2018/2019. 
 
 ## Challenge Phase
 
