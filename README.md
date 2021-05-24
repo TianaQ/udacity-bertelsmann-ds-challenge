@@ -21,7 +21,7 @@ After the challenge phase I was accepted to the full scholarship but due to the 
 >See [Survey analysis report](https://github.com/TianaQ/udacity-bertelsmann-ds-challenge/blob/master/1-dfnd-descriptive-stats/survey__presentation.pdf)
 <br>
 
-[dfnd-sql](https://github.com/TianaQ/udacity-bertelsmann-ds-challenge/tree/master/2-dfnd-sql) - the project required applying __SQL__ to explore data in Chinook sample database. I used SQL and R together in R Markdown to pull data from the database with queries and to use the queries' results for further analysis and visualisations (the output included in the final presentation can be seen [here]). I explored the distribution of music albums by price and genres, the popularity of different genres in the USA and the most favoured composers.
+[dfnd-sql](https://github.com/TianaQ/udacity-bertelsmann-ds-challenge/tree/master/2-dfnd-sql) - the project required applying __SQL__ to explore data in Chinook sample database. I used SQL and R together in R Markdown to pull data from the database with queries and to use the queries' results for further analysis and visualisations (the output included in the final presentation can be seen [here](https://tianaq.github.io/udacity-bertelsmann-ds-challenge/2-dfnd-sql/project_sql_output.html). I explored the distribution of music albums by price and genres, the popularity of different genres in the USA and the most favoured composers.
 >See [Music SQL database analysis report](https://github.com/TianaQ/udacity-bertelsmann-ds-challenge/blob/master/2-dfnd-sql/Music%20SQL%20Database%20Analysis.pdf)
 <br>
 
