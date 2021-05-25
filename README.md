@@ -37,7 +37,7 @@ DFND __Tableau__ project can be found [here](https://public.tableau.com/profile/
 >See [Weather trends report](https://tianaq.github.io/udacity-bertelsmann-ds-challenge/3-dand-sql/weather_trends.html)
 <br>
 
-[dand-intro-to-python](https://github.com/TianaQ/udacity-bertelsmann-ds-challenge/tree/master/4-dand-intro-to-python) - the project required to investigate US Bikeshare data using __Python basics__: using built-in data sctruvtures, writing functions, using libraries, etc. I explored the data in terms of time patterns, location differences and client status.
+[dand-intro-to-python](https://github.com/TianaQ/udacity-bertelsmann-ds-challenge/tree/master/4-dand-intro-to-python) - the project required to investigate US Bikeshare data using __Python basics__: using built-in data structures, writing functions, using libraries, etc. I explored the data in terms of time patterns, location differences and client status.
 >See [US Bikeshare data analysis](https://tianaq.github.io/udacity-bertelsmann-ds-challenge/4-dand-intro-to-python/Bike_Share_Analysis.html)
 <br>
 
